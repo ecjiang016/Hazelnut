@@ -39,13 +39,13 @@ def col2im(mul, h_prime, w_prime, C, F):
     C: reshaped filter channel, if 0, reshape the filter to 2D, Otherwise reshape it to 3D
     F: number of filters
     Returns:
-    (F,C,h_prime,w_prime) matrix
+    (F/NC,h_prime,w_prime) matrix
     """
     
     out = np.zeros([F,h_prime,w_prime])
     for i in range(F):
         col = mul[i]
-        out[i,:,:] = np.reshape(col,(h_prime,w_prime))
+        out[i] = np.reshape(col,(h_prime,w_prime))
 
     return out
 

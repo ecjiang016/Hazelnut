@@ -20,7 +20,7 @@ def conv(inp, kern):
     inp_cols = np.array([im2col(tensor, HH) for tensor in inp])
     inp_col = np.hstack(inp_cols)
 
-    kern_col = np.reshape(kern, (3, -1))
+    kern_col = np.reshape(kern, (F, -1))
 
     mul = np.matmul(kern_col, inp_col)
 
