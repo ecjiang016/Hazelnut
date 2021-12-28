@@ -71,10 +71,10 @@ def step(x):
 def step_dv(x):
     return 0
 
-Sigmoid = np.vectorize(Sigmoid)
-Sigmoid_dv = np.vectorize(Sigmoid_dv)
-ReLU = np.vectorize(ReLU)
-ReLU_dv = np.vectorize(ReLU_dv)
-LeakyReLU = np.vectorize(LeakyReLU)
-LeakyReLU_dv = np.vectorize(LeakyReLU_dv)
+Sigmoid = np.vectorize(Sigmoid, otypes=[np.float64])
+Sigmoid_dv = np.vectorize(Sigmoid_dv, otypes=[np.float64])
+ReLU = np.vectorize(ReLU, otypes=[np.float64])
+ReLU_dv = np.vectorize(ReLU_dv, otypes=[np.float64])
+LeakyReLU = np.vectorize(LeakyReLU, otypes=[np.float64])
+LeakyReLU_dv = np.vectorize(LeakyReLU_dv, otypes=[np.float64])
 step = np.vectorize(step)
