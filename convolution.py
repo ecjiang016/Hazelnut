@@ -1,14 +1,8 @@
 import numpy as np
 from scipy.signal import convolve
 from .ActivationFunctions import *
+from .MatmulConv.Conv import conv as Conv
 from alive_progress import alive_it as bar
-
-def Conv(tensor, kernel, mode): #Assumes 3D input and kernels
-    output = []
-    for matrix, mat_kernel in zip(tensor, kernel):
-        output.append(convolve(matrix, mat_kernel, mode))
-
-    return sum(output)
 
 class convolution:
     def __init__(self, Layout):
@@ -48,13 +42,7 @@ class convolution:
             activations = history[-1]
 
             if module_type == "Kernel":
-                outputs = []
-
-                for kernel in module[1]:
-                    convoluted = Conv(activations, kernel, "valid")
-                    outputs.append(convoluted)
-
-                history.append(outputs)
+                history.append(Conv(activations, module[1]))
             
             elif module_type == "Pooling":
                 output, mask = self.Pool(activations, module[1])
