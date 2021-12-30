@@ -8,7 +8,7 @@ def conv(inp, kern):
 
     Input:
     - inp: Input data of shape (N, C, H, W)
-    - kern: Kernel/filter in the shape (F, C, HH, WW)
+    - kern: Kernels/filters in the shape (F, C, HH, WW)
 
     Returns the input convolved by the kernel
     """
@@ -20,7 +20,7 @@ def conv(inp, kern):
     inp_cols = np.array([im2col(tensor, HH) for tensor in inp])
     inp_col = np.hstack(inp_cols)
 
-    kern_col = np.reshape(kern, (F, -1))
+    kern_col = np.reshape(np.flip(kern, (2, 3)), (F, -1))
 
     mul = np.matmul(kern_col, inp_col)
 
@@ -33,8 +33,62 @@ def conv(inp, kern):
 
     return np.array(output)
         
-    
+def conv_kern_grad(acti, grad):
+    """
+    Custom function for calculating kernel gradients.
+    Optimized by summing the gradients during the matrix multiplication and sacrificing memory.
 
+    Input:
+    - acti: The cached activations of shape (N, C, H, W)
+    - grad: The previous gradient of shape (N, C, H, W)
+
+    Returns the kernel gradients
+    """
+
+    F, C, HH, WW = acti.shape
+    N, C, H, W = grad.shape
+
+    for c in range(C):
+        inp_cols = np.array([im2col(grad[n, c], HH) for n in range(N)])
+        inp_col = np.hstack(inp_cols)
+
+def conv_full(inp, kern):
+    """
+    Full convolution through im2col.
+
+    - inp: Input data of shape (N, C, H, W)
+    - kern: Kernels/filters in the shape (F, C, HH, WW)
+
+    Returns the input convolved by the kernel
+    """
+
+    N, C, H, W = inp.shape
+    F, C, HH, WW = kern.shape
+    H_prime = H + HH - 1
+    W_prime = W + WW - 1
+
+    #padded_inp = np.zeros((N, C, H+HH-1, W+WW-1))
+    #for n in range(N): #Sucky nested loop but idk what else to do
+        #for c in range(C):
+            #padded_inp[n, c] = np.pad(inp[n, c], HH-1)
+
+    padded_inp = np.array([[np.pad(inp[n, c], HH-1) for c in range(C)] for n in range(N)])
+    
+    inp_cols = np.array([im2col(tensor, HH) for tensor in padded_inp])
+    inp_col = np.hstack(inp_cols)
+
+    kern_col = np.reshape(np.flip(kern, (2, 3)), (F, -1))
+
+    mul = np.matmul(kern_col, inp_col)
+
+    single_output_len = H_prime * W_prime
+
+    output = []
+    for i in range(N):
+        index = i*single_output_len
+        output.append(col2im(mul[:, index:index+single_output_len], H_prime, W_prime, C, F))
+
+    return np.array(output)
 
 def conv_backward_naive(x, w, mode):
     """

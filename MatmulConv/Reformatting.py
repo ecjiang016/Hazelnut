@@ -2,10 +2,36 @@ import numpy as np
 from skimage.util.shape import view_as_windows
 
 def memory_strided_im2col(x, kernel_size):
+    """
+    Args:
+    x: image matrix to be translated into columns, (C,H,W)
+    kernel_size: length of a side of a square kernel
+
+    Returns:
+    col: (new_h*new_w,hh*ww*C) matrix, each column is a cube that will convolve with a filter
+    new_h = (H-hh) // stride + 1, new_w = (W-ww) // stride + 1
+    """
+
     output_shape = x.shape[1] - kernel_size + 1
     cols = view_as_windows(x, (1, kernel_size, kernel_size))
     output = [cols[i].reshape(output_shape*output_shape, kernel_size*kernel_size).T for i in range(x.shape[0])]
     return np.vstack(output)
+
+def memory_strided_im2col_single(x, kernel_size):
+    """
+    Same thing as memory_strided_im2col but for images with no channels for slightly better preformance
+
+    Args:
+    x: image matrix to be translated into columns, (H,W)
+    kernel_size: length of a side of a square kernel
+
+    Returns:
+    col: (new_h*new_w,hh*ww) matrix, each column is a cube that will convolve with a filter
+    new_h = (H-hh) // stride + 1, new_w = (W-ww) // stride + 1
+    """
+
+    output_shape = x.shape[1] - kernel_size + 1
+    return view_as_windows(x, (kernel_size, kernel_size)).reshape(output_shape*output_shape, kernel_size*kernel_size).T
 
 def im2col(x,hh,ww):
 

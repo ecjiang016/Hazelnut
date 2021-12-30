@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import convolve
 from .ActivationFunctions import *
-from .MatmulConv.Conv import conv as Conv
+from .MatmulConv.Conv import conv, conv_full
 from alive_progress import alive_it as bar
 
 class convolution:
@@ -42,7 +42,7 @@ class convolution:
             activations = history[-1]
 
             if module_type == "Kernel":
-                history.append(Conv(activations, module[1]))
+                history.append(conv(activations, module[1]))
             
             elif module_type == "Pooling":
                 output, mask = self.Pool(activations, module[1])
@@ -58,48 +58,31 @@ class convolution:
         
         return history
     
-    def Backpropagate(self, History, PreviousGradient, learning_rate):
-        kernel_gradients = {}
-        for i, module in enumerate(self.Layout):
-            if module[0] == "Kernel":
-                kernel_gradients[i] = np.zeros(module[1].shape)
-
+    def Backpropagate(self, history, previous_gradient, learning_rate):
+        batch_size = previous_gradient.shape[0]
         last = len(self.Layout) -1 #Reduces amount of len() calls
 
-        for history, previous_gradient in bar(zip(History, PreviousGradient)):
-            for index, module in enumerate(reversed(self.Layout)):
+        for index, module in enumerate(reversed(self.Layout)):
 
-                i = last - index #Compromises for the reversing of the layout but not the index
-                module_type = module[0]
+            i = last - index #Compromises for the reversing of the layout but not the index
+            module_type = module[0]
 
-                if module_type == "Kernel":
-                    
-                    current_gradient = []
+            if module_type == "Kernel":
+                #Calculate and update kernel gradients
+                acti = np.swapaxes(history[i], 0, 1)
+                grad = np.swapaxes(previous_gradient, 0, 1)
+                kernel_gradients = np.swapaxes(conv(acti, grad), 0, 1)
+                self.Layout[i] = ("Kernel", self.Layout[i][1] - ((kernel_gradients/batch_size) * learning_rate))
 
-                    for kt, kernel_tensor in enumerate(module[1]):
-                        for km in range(len(kernel_tensor)):
-                            kernel_gradient = convolve(history[i][km], previous_gradient[kt], "valid")
-                            kernel_gradients[i][kt][km] += kernel_gradient
+                #Calculate the next gradient
+                new_kern = np.flip(np.swapaxes(module[1], 0, 1), (2, 3))
+                previous_gradient = conv_full(previous_gradient, new_kern)
+    
+            elif module_type == "Pooling":
+                previous_gradient = self.Pool_Backpropagate(previous_gradient, history[i+1][1], history[i][0].shape, module[1])
 
-                    for km in range(module[1].shape[1]):
-                        single_matrix_gradient = []
-                        for kernel_tensor in module[1]:
-                            flipped_kernel = np.flipud(np.fliplr(kernel_tensor[km]))
-                            single_matrix_gradient.append(convolve(flipped_kernel, previous_gradient[kt], "full"))
-                        current_gradient.append(sum(single_matrix_gradient)) #Just adding them all together now since I have no clue what the gradient really is
+            elif module_type == "AF":
+                previous_gradient = previous_gradient * AF_dv(history[i], module[1])
 
-                    previous_gradient = np.array(current_gradient)
-     
-                elif module_type == "Pooling":
-                    previous_gradient = self.Pool_Backpropagate(previous_gradient, history[i+1][1], history[i][0].shape, module[1])
-
-                elif module_type == "AF":
-                    previous_gradient = previous_gradient * AF_dv(history[i], module[1])
-
-                else:
-                    raise ValueError("Invalid convolution module layout")
-
-        batch_size = len(PreviousGradient)
-        
-        for index, gradient in kernel_gradients.items():
-            self.Layout[index] = ("Kernel", self.Layout[index][1] - ((gradient/batch_size) * learning_rate))
+            else:
+                raise ValueError("Invalid convolution module layout")
