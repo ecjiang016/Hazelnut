@@ -6,7 +6,7 @@ from alive_progress import alive_it as bar
 
 class convolution:
     def __init__(self, Layout):
-        self.Layout = Layout #Layout = [("Kernel", [kernel_0, kernel_1, kernel_2]]), ("AF", "ReLU", bias), ("Pooling", size)]
+        self.Layout = Layout #Layout = [("Kernel", [kernel_0, kernel_1, kernel_2]], "Valid"), ("AF", "ReLU", bias), ("Pooling", size)]
     
     def Pool(self, matrix, size):
         strides_y = int(np.floor(matrix.shape[0]/size))
@@ -42,6 +42,8 @@ class convolution:
             activations = history[-1]
 
             if module_type == "Kernel":
+                if module[2] == "Same":
+                    activations = np.pad(activations, (module[1].shape - 1) //2)
                 history.append(conv(activations, module[1]))
             
             elif module_type == "Pooling":
@@ -68,10 +70,16 @@ class convolution:
             module_type = module[0]
 
             if module_type == "Kernel":
-                #Calculate and update kernel gradients
                 acti = np.swapaxes(history[i], 0, 1)
+                #Calculate and update kernel gradients
                 grad = np.swapaxes(previous_gradient, 0, 1)
                 kernel_gradients = np.swapaxes(conv(acti, grad), 0, 1)
+
+                if module[2] == "Same":
+                    padding_size = (module[1].shape -1) //2
+                    kernel_gradients = kernel_gradients[:, :, padding_size:-padding_size, padding_size:-padding_size]
+                    previous_gradient = np.pad(previous_gradient, padding_size)
+
                 self.Layout[i] = ("Kernel", self.Layout[i][1] - ((kernel_gradients/batch_size) * learning_rate))
 
                 #Calculate the next gradient
