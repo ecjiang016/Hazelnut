@@ -2,6 +2,7 @@ import numpy as np
 import random
 from alive_progress import alive_it as bar
 from .ActivationFunctions import *
+import Optimizers
 
 class mlp:
     def __init__(self, Neurons, AF_Type, Weights=None, Biases=None):
@@ -10,11 +11,15 @@ class mlp:
         self.AF_Type = AF_Type
         self.Weights = Weights
         self.Biases = Biases
+        self.LearningRate = 0.0001
         self.cost_function = lambda Acti, Output: (Acti - Output)*2
+        self.Optimizer = Optimizers.Momentum
         self.info = True
         
-        self.Biases_mat = None #Don't mess with this one
-        
+        #Global variables handled by the class (Don't mess with them)
+        self.Biases_mat = None
+        self.OptimizerCache = 0
+
     def Bias_convert(self, matrix_width): #Converts single bias vector to a bias matrix
         Biases_mat = [None]
         for i in range(1, len(self.Biases)):
@@ -51,7 +56,7 @@ class mlp:
             activations.append(AF(z_vectors[layer], self.AF_Type[layer]))
         return activations, z_vectors
         
-    def Backpropagate(self, activations, z_vectors, desired_output, learning_rate, training_batch, pass_on_gradient=False):
+    def Backpropagate(self, activations, z_vectors, desired_output, training_batch, pass_on_gradient=False):
         ErrorVector = [AF_dv(z_vectors[self.LastLayer], self.AF_Type[self.LastLayer])*self.cost_function(activations[self.LastLayer], desired_output)]
         for j in range(1, self.LastLayer):
             i = self.LastLayer - j
@@ -60,15 +65,17 @@ class mlp:
             
         #Update matrices
         for i in range(1, self.LastLayer+1):
-            self.Weights[i] = self.Weights[i] - ((learning_rate/training_batch)*np.matmul(ErrorVector[i], activations[i-1].T))
+            weight_gradient = np.matmul(ErrorVector[i], activations[i-1].T) / training_batch
+            self.Weights[i] = self.Weights[i] - self.Optimizer(self.LearningRate, weight_gradient, self.OptimizerCache)
 
         for i in range(1, self.LastLayer+1):
-            self.Biases_mat[i] = self.Biases_mat[i] - ((learning_rate/training_batch)*np.matmul(ErrorVector[i], np.full((training_batch, training_batch), 1)))
+            bias_gradient = np.matmul(ErrorVector[i], np.full((training_batch, training_batch), 1)) / training_batch
+            self.Biases_mat[i] = self.Biases_mat[i] - self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache)
         
         if pass_on_gradient == True:
             return np.matmul(self.Weights[1].T, ErrorVector[1])
     
-    def train(self, TrainingData, TrainingTimes=1000, TrainingBatch=1000, LearningRate=0.1):
+    def train(self, TrainingData, TrainingTimes=1000, TrainingBatch=1000):
         data_length = len(TrainingData[0])-1
         self.Biases_mat = self.Bias_convert(TrainingBatch)
 
@@ -84,7 +91,7 @@ class mlp:
             desired_output = np.array(desired_output).T
             
             activations, z_matrix = self.FeedForward(image_activations, True)
-            self.Backpropagate(activations, z_matrix, desired_output, LearningRate, TrainingBatch)
+            self.Backpropagate(activations, z_matrix, desired_output, TrainingBatch)
 
             if self.info == True:
                 #Calculating accuracy of batch

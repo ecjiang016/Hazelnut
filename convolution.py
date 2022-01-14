@@ -3,12 +3,18 @@ from scipy.signal import convolve
 from .ActivationFunctions import *
 from .MatmulConv.Conv import conv, conv_full
 from alive_progress import alive_it as bar
+import Optimizers
 
 class convolution:
     def __init__(self, Layout):
         self.Layout = Layout #Layout = [("Kernel", [kernel_0, kernel_1, kernel_2]], "Valid"), ("AF", "ReLU", bias), ("Pooling", size)]
+        self.LearningRate = 0.0001
+        self.Optimizer = Optimizers.Momentum
+
+        #Global variables handled by the class (Don't mess with them)
+        self.OptimizerCache = 0
     
-    def Pool(self, matrix, size):
+    def Pool(self, matrix, size): #Does not currently work due to the lack of tensor support
         strides_y = int(np.floor(matrix.shape[0]/size))
         strides_x = int(np.floor(matrix.shape[1]/size))
         mask = np.zeros(matrix.shape)
@@ -60,7 +66,7 @@ class convolution:
         
         return history
     
-    def Backpropagate(self, history, previous_gradient, learning_rate):
+    def Backpropagate(self, history, previous_gradient):
         batch_size = previous_gradient.shape[0]
         last = len(self.Layout) -1 #Reduces amount of len() calls
 
@@ -73,14 +79,14 @@ class convolution:
                 acti = np.swapaxes(history[i], 0, 1)
                 #Calculate and update kernel gradients
                 grad = np.swapaxes(previous_gradient, 0, 1)
-                kernel_gradients = np.swapaxes(conv(acti, grad), 0, 1)
+                kernel_gradients = np.swapaxes(conv(acti, grad), 0, 1)/batch_size
 
                 if module[2] == "Same":
                     padding_size = (module[1].shape -1) //2
                     kernel_gradients = kernel_gradients[:, :, padding_size:-padding_size, padding_size:-padding_size]
                     previous_gradient = np.pad(previous_gradient, padding_size)
 
-                self.Layout[i] = ("Kernel", self.Layout[i][1] - ((kernel_gradients/batch_size) * learning_rate))
+                self.Layout[i] = ("Kernel", self.Layout[i][1] - self.Optimizer(self.LearningRate, kernel_gradients, self.OptimizerCache))
 
                 #Calculate the next gradient
                 new_kern = np.flip(np.swapaxes(module[1], 0, 1), (2, 3))
