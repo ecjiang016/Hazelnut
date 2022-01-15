@@ -3,13 +3,15 @@ from scipy.signal import convolve
 from .ActivationFunctions import *
 from .MatmulConv.Conv import conv, conv_full
 from alive_progress import alive_it as bar
-import Optimizers
+from . import Optimizers
+from . import BatchNormalization as BatchNorm
 
 class convolution:
-    def __init__(self, Layout):
-        self.Layout = Layout #Layout = [("Filter", [filter_0, filter_1, filter_2]], "Valid"), ("AF", "ReLU", bias), ("Pooling", size)]
+    def __init__(self, Layout, Training=False):
+        self.Layout = Layout #Layout = [("Filter", [filter_0, filter_1, filter_2]], "Valid"), ("BatchNorm", (gamma=1, beta=0, test_mean=0, test_variance=0)), ("AF", "ReLU",), ("Pooling", size)]
         self.LearningRate = 0.0001
         self.Optimizer = Optimizers.Momentum
+        self.Training = Training
 
         #Global variables handled by the class (Don't mess with them)
         self.OptimizerCache = {}
@@ -46,31 +48,35 @@ class convolution:
 
     def FeedForward(self, input_array):
         history = [input_array]
+        activations = input_array
         for module in self.Layout:
             module_type = module[0]
-            activations = history[-1]
 
             if module_type == "Filter":
                 if module[2] == "Same":
                     activations = np.pad(activations, (module[1].shape - 1) //2)
                 history.append(conv(activations, module[1]))
+
+            elif module_type == "Batch Norm":
+                activations, cache = BatchNorm.FeedForward(activations, module[1], training=self.Training)
+                history.append(cache)
             
             elif module_type == "Pooling":
                 output, mask = self.Pool(activations, module[1])
+                activations = output
                 history.append((output, mask))
                 
             elif module_type == "AF":
-                #output = AF(activations + module[2], module[1])
-                output = AF(activations, module[1])
-                history.append(output)
+                activations = AF(activations, module[1])
+                history.append(activations)
             
             else:
                 raise ValueError("Invalid convolution module layout")
         
         return history
     
-    def Backpropagate(self, history, previous_gradient):
-        batch_size = previous_gradient.shape[0]
+    def Backpropagate(self, history, pass_gradient):
+        batch_size = pass_gradient.shape[0]
         last = len(self.Layout) -1 #Reduces amount of len() calls
 
         for index, module in enumerate(reversed(self.Layout)): #Change to reversed(enumerate(self.Layout)) sometime
@@ -81,26 +87,29 @@ class convolution:
             if module_type == "Filter":
                 acti = np.swapaxes(history[i], 0, 1)
                 #Calculate and update kernel gradients
-                grad = np.swapaxes(previous_gradient, 0, 1)
+                grad = np.swapaxes(pass_gradient, 0, 1)
                 kernel_gradients = np.swapaxes(conv(acti, grad), 0, 1)/batch_size
 
                 if module[2] == "Same":
                     padding_size = (module[1].shape -1) //2
                     kernel_gradients = kernel_gradients[:, :, padding_size:-padding_size, padding_size:-padding_size]
-                    previous_gradient = np.pad(previous_gradient, padding_size)
+                    pass_gradient = np.pad(pass_gradient, padding_size)
 
                 kernel_gradients, self.OptimizerCache[i] = self.Optimizer(self.LearningRate, kernel_gradients, self.OptimizerCache[i])
                 self.Layout[i] = ("Filter", self.Layout[i][1] - kernel_gradients)
 
                 #Calculate the next gradient
                 new_kern = np.flip(np.swapaxes(module[1], 0, 1), (2, 3))
-                previous_gradient = conv_full(previous_gradient, new_kern)
+                pass_gradient = conv_full(pass_gradient, new_kern)
+
+            elif module_type == "BatchNorm":
+                pass_gradient, module[1] = ("BatchNorm", BatchNorm.Backpropagate(pass_gradient, module[1], history[i], self.LearningRate))
     
             elif module_type == "Pooling":
-                previous_gradient = self.Pool_Backpropagate(previous_gradient, history[i+1][1], history[i][0].shape, module[1])
+                pass_gradient = self.Pool_Backpropagate(pass_gradient, history[i+1][1], history[i][0].shape, module[1])
 
             elif module_type == "AF":
-                previous_gradient = previous_gradient * AF_dv(history[i], module[1])
+                pass_gradient = pass_gradient * AF_dv(history[i], module[1])
 
             else:
                 raise ValueError("Invalid convolution module layout")
