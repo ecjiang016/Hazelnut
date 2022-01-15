@@ -18,7 +18,7 @@ class mlp:
         
         #Global variables handled by the class (Don't mess with them)
         self.Biases_mat = None
-        self.OptimizerCache = [0 for _ in range(self.LastLayer)]
+        self.OptimizerCache = [0 for _ in range(self.LastLayer*2)]
 
     def Bias_convert(self, matrix_width): #Converts single bias vector to a bias matrix
         Biases_mat = [None]
@@ -71,7 +71,7 @@ class mlp:
 
         for i in range(1, self.LastLayer+1):
             bias_gradient = np.matmul(ErrorVector[i], np.full((training_batch, training_batch), 1)) / training_batch
-            Grad, self.OptimizerCache = self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache[i-1])
+            Grad, self.OptimizerCache = self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache[i-1 + self.LastLayer])
             self.Biases_mat[i] = self.Biases_mat[i] - Grad
         
         if pass_on_gradient == True:
