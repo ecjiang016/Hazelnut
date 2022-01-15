@@ -7,12 +7,15 @@ import Optimizers
 
 class convolution:
     def __init__(self, Layout):
-        self.Layout = Layout #Layout = [("Kernel", [kernel_0, kernel_1, kernel_2]], "Valid"), ("AF", "ReLU", bias), ("Pooling", size)]
+        self.Layout = Layout #Layout = [("Filter", [filter_0, filter_1, filter_2]], "Valid"), ("AF", "ReLU", bias), ("Pooling", size)]
         self.LearningRate = 0.0001
         self.Optimizer = Optimizers.Momentum
 
         #Global variables handled by the class (Don't mess with them)
-        self.OptimizerCache = 0
+        self.OptimizerCache = {}
+        for i, module in enumerate(self.Layout):
+            if module[0] == "Filter":
+                self.OptimizerCache[i] = 0
     
     def Pool(self, matrix, size): #Does not currently work due to the lack of tensor support
         strides_y = int(np.floor(matrix.shape[0]/size))
@@ -47,7 +50,7 @@ class convolution:
             module_type = module[0]
             activations = history[-1]
 
-            if module_type == "Kernel":
+            if module_type == "Filter":
                 if module[2] == "Same":
                     activations = np.pad(activations, (module[1].shape - 1) //2)
                 history.append(conv(activations, module[1]))
@@ -70,12 +73,12 @@ class convolution:
         batch_size = previous_gradient.shape[0]
         last = len(self.Layout) -1 #Reduces amount of len() calls
 
-        for index, module in enumerate(reversed(self.Layout)):
+        for index, module in enumerate(reversed(self.Layout)): #Change to reversed(enumerate(self.Layout)) sometime
 
             i = last - index #Compromises for the reversing of the layout but not the index
             module_type = module[0]
 
-            if module_type == "Kernel":
+            if module_type == "Filter":
                 acti = np.swapaxes(history[i], 0, 1)
                 #Calculate and update kernel gradients
                 grad = np.swapaxes(previous_gradient, 0, 1)
@@ -86,7 +89,8 @@ class convolution:
                     kernel_gradients = kernel_gradients[:, :, padding_size:-padding_size, padding_size:-padding_size]
                     previous_gradient = np.pad(previous_gradient, padding_size)
 
-                self.Layout[i] = ("Kernel", self.Layout[i][1] - self.Optimizer(self.LearningRate, kernel_gradients, self.OptimizerCache))
+                kernel_gradients, self.OptimizerCache[i] = self.Optimizer(self.LearningRate, kernel_gradients, self.OptimizerCache[i])
+                self.Layout[i] = ("Filter", self.Layout[i][1] - kernel_gradients)
 
                 #Calculate the next gradient
                 new_kern = np.flip(np.swapaxes(module[1], 0, 1), (2, 3))

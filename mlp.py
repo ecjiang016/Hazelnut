@@ -18,7 +18,7 @@ class mlp:
         
         #Global variables handled by the class (Don't mess with them)
         self.Biases_mat = None
-        self.OptimizerCache = 0
+        self.OptimizerCache = [0 for _ in range(self.LastLayer)]
 
     def Bias_convert(self, matrix_width): #Converts single bias vector to a bias matrix
         Biases_mat = [None]
@@ -66,11 +66,13 @@ class mlp:
         #Update matrices
         for i in range(1, self.LastLayer+1):
             weight_gradient = np.matmul(ErrorVector[i], activations[i-1].T) / training_batch
-            self.Weights[i] = self.Weights[i] - self.Optimizer(self.LearningRate, weight_gradient, self.OptimizerCache)
+            Grad, self.OptimizerCache = self.Optimizer(self.LearningRate, weight_gradient, self.OptimizerCache[i-1])
+            self.Weights[i] = self.Weights[i] - Grad
 
         for i in range(1, self.LastLayer+1):
             bias_gradient = np.matmul(ErrorVector[i], np.full((training_batch, training_batch), 1)) / training_batch
-            self.Biases_mat[i] = self.Biases_mat[i] - self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache)
+            Grad, self.OptimizerCache = self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache[i-1])
+            self.Biases_mat[i] = self.Biases_mat[i] - Grad
         
         if pass_on_gradient == True:
             return np.matmul(self.Weights[1].T, ErrorVector[1])
