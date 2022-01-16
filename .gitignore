@@ -8,3 +8,4 @@ data/__pycache__/mlp.cpython-39.pyc
 __pycache__/__init__.cpython-310.pyc
 MatmulConv/__pycache__/Conv.cpython-39.pyc
 MatmulConv/__pycache__/Reformatting.cpython-39.pyc
+__pycache__/KernelVisualization.cpython-39.pyc

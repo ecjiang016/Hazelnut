@@ -2,13 +2,12 @@ import numpy as np
 from scipy.signal import convolve
 from .ActivationFunctions import *
 from .MatmulConv.Conv import conv, conv_full
-from alive_progress import alive_it as bar
 from . import Optimizers
 from . import BatchNormalization as BatchNorm
 
 class convolution:
     def __init__(self, Layout, Training=False):
-        self.Layout = Layout #Layout = [("Filter", [filter_0, filter_1, filter_2]], "Valid"), ("BatchNorm", (gamma=1, beta=0, test_mean=0, test_variance=0)), ("AF", "ReLU",), ("Pooling", size)]
+        self.Layout = Layout #Layout = [("Skip", "Begin"), ("Filter", [filter_0, filter_1, filter_2]], "Valid"), ("BatchNorm", (gamma=1, beta=0, test_mean=0, test_variance=0)), ("AF", "ReLU",), ("Skip", "End")]
         self.LearningRate = 0.0001
         self.Optimizer = Optimizers.Momentum
         self.Training = Training
@@ -60,15 +59,21 @@ class convolution:
             elif module_type == "Batch Norm":
                 activations, cache = BatchNorm.FeedForward(activations, module[1], training=self.Training)
                 history.append(cache)
-            
-            elif module_type == "Pooling":
-                output, mask = self.Pool(activations, module[1])
-                activations = output
-                history.append((output, mask))
                 
             elif module_type == "AF":
                 activations = AF(activations, module[1])
                 history.append(activations)
+
+            elif module_type == "Skip":
+                if module[1] == "Begin":
+                    skip_cache = activations
+                else:
+                    activations += skip_cache
+
+            elif module_type == "Pooling":
+                output, mask = self.Pool(activations, module[1])
+                activations = output
+                history.append((output, mask))
             
             else:
                 raise ValueError("Invalid convolution module layout")
@@ -104,12 +109,19 @@ class convolution:
 
             elif module_type == "BatchNorm":
                 pass_gradient, module[1] = ("BatchNorm", BatchNorm.Backpropagate(pass_gradient, module[1], history[i], self.LearningRate))
-    
-            elif module_type == "Pooling":
-                pass_gradient = self.Pool_Backpropagate(pass_gradient, history[i+1][1], history[i][0].shape, module[1])
 
             elif module_type == "AF":
                 pass_gradient = pass_gradient * AF_dv(history[i], module[1])
+
+            elif module_type == "Skip":
+                if module[1] == "End":
+                    skip_cache = pass_gradient
+                else:
+                    pass_gradient += skip_cache
+
+
+            elif module_type == "Pooling":
+                pass_gradient = self.Pool_Backpropagate(pass_gradient, history[i+1][1], history[i][0].shape, module[1])
 
             else:
                 raise ValueError("Invalid convolution module layout")
