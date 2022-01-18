@@ -2,7 +2,7 @@ import numpy as np
 import random
 from alive_progress import alive_it as bar
 from .ActivationFunctions import *
-import Optimizers
+from . import Optimizers
 
 class mlp:
     def __init__(self, Neurons, AF_Type, Weights=None, Biases=None):
