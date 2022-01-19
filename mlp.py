@@ -57,6 +57,8 @@ class mlp:
         return activations, z_vectors
         
     def Backpropagate(self, activations, z_vectors, desired_output, training_batch, pass_on_gradient=False):
+        self.Biases_mat = self.Bias_convert(training_batch)
+
         ErrorVector = [AF_dv(z_vectors[self.LastLayer], self.AF_Type[self.LastLayer])*self.cost_function(activations[self.LastLayer], desired_output)]
         for j in range(1, self.LastLayer):
             i = self.LastLayer - j
@@ -66,12 +68,12 @@ class mlp:
         #Update matrices
         for i in range(1, self.LastLayer+1):
             weight_gradient = np.matmul(ErrorVector[i], activations[i-1].T) / training_batch
-            Grad, self.OptimizerCache = self.Optimizer(self.LearningRate, weight_gradient, self.OptimizerCache[i-1])
+            Grad, self.OptimizerCache[i-1] = self.Optimizer(self.LearningRate, weight_gradient, self.OptimizerCache[i-1])
             self.Weights[i] = self.Weights[i] - Grad
 
         for i in range(1, self.LastLayer+1):
             bias_gradient = np.matmul(ErrorVector[i], np.full((training_batch, training_batch), 1)) / training_batch
-            Grad, self.OptimizerCache = self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache[i-1 + self.LastLayer])
+            Grad, self.OptimizerCache[i-1 + self.LastLayer] = self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache[i-1 + self.LastLayer])
             self.Biases_mat[i] = self.Biases_mat[i] - Grad
         
         if pass_on_gradient == True:

@@ -24,7 +24,7 @@ def FeedForward(inp, parameters, training=False):
         for n in range(N):
             for c in range(C):
                 mean[n, c] = np.sum(inp[n, c]) / channel_size
-                variance[n, c] = np.square(inp - mean[n, c]) / channel_size
+                variance[n, c] = np.sum(np.square(inp - mean[n, c])) / channel_size
     
     else:
         mean = test_mean
@@ -61,7 +61,7 @@ def Backpropagate(grad, parameters, cache, learning_rate): #Need to implement op
     cache0, cache1, cache2 = cache
 
     N, C, H, W = grad.shape
-    gamma, beta, _, _ = parameters
+    gamma, beta, test_mean, test_variance = parameters
 
     beta_grad = sum(grad)
     gamma_grad = sum(grad * cache2)
@@ -73,7 +73,7 @@ def Backpropagate(grad, parameters, cache, learning_rate): #Need to implement op
     for n in range(N):
         for c in range(C):
             variance_grad = np.sum(cache0[n, c] * (-(gamma[c] * (cache1[n, c]**3))/2))
-            mean_grad = np.sum(((-(gamma[c] * cache1[n, c])/2) * grad[n, c])) + ((-2 * variance_grad[c] * np.sum(cache0[n, c]))/C)
+            mean_grad = np.sum(((-(gamma[c] * cache1[n, c])/2) * grad[n, c])) + ((-2 * variance_grad * np.sum(cache0[n, c]))/C)
             pass_gradient[n, c] = (grad[n, c] * cache1[n, c]) + ((variance_grad * 2 * cache0[n, c])/C) + (mean_grad/C)
     
-    return pass_gradient
+    return pass_gradient, (gamma, beta, test_mean, test_variance)
