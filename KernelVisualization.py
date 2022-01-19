@@ -14,7 +14,7 @@ def display(fig, cnn_layout, cost_list):
     """
     kernels = []
     for module in cnn_layout:
-        if module[0] == "Kernel":
+        if module[0] == "Filter":
             kernels.append(module[1])
 
     layers = len(kernels)

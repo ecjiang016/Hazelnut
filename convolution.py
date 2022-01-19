@@ -105,7 +105,7 @@ class convolution:
             if module_type == "Filter":
                 acti = history[i]
                 if module[2] == "Same":
-                    N, C, H, W = pass_gradient.shape
+                    N, C, H, W = acti.shape
                     padded_acti = np.zeros((N, C, H+module[1].shape[2] - 1, W+module[1].shape[2] - 1))
 
                     for n in range(N):
@@ -113,30 +113,23 @@ class convolution:
                             padded_acti[n, c] = np.pad(acti[n, c], (module[1].shape[2] -1) //2)
 
                     acti = padded_acti
-                    
+
                 acti = np.swapaxes(acti, 0, 1)
                 #Calculate and update kernel gradients
                 grad = np.swapaxes(pass_gradient, 0, 1)
                 kernel_gradients = np.swapaxes(conv(acti, grad), 0, 1)/batch_size
 
-                if module[2] == "Same":
-                    padding_size = (module[1].shape[2] -1) //2
-                    kernel_gradients = kernel_gradients[:, :, padding_size:-padding_size, padding_size:-padding_size]
-                    
-                    N, C, H, W = pass_gradient.shape
-                    padded_gradient = np.zeros((N, C, H+module[1].shape[2] - 1, W+module[1].shape[2] - 1))
-                    for n in range(N):
-                        for c in range(C):
-                            padded_gradient[n, c] = np.pad(pass_gradient[n, c], padding_size)
-
-                    pass_gradient = padded_gradient
-
                 #Calculate the next gradient
                 new_kern = np.flip(np.swapaxes(module[1], 0, 1), (2, 3))
-                pass_gradient = conv_full(pass_gradient, new_kern)
+                pass_gradient = conv_full(new_kern, pass_gradient)
+                pass_gradient = np.swapaxes(pass_gradient, 0, 1)
+
+                if module[2] == "Same":
+                    padding_size = (module[1].shape[2] -1) //2
+                    pass_gradient = pass_gradient[:, :, padding_size:-padding_size, padding_size:-padding_size]
 
                 kernel_gradients, self.OptimizerCache[i] = self.Optimizer(self.LearningRate, kernel_gradients, self.OptimizerCache[i])
-                self.Layout[i] = ("Filter", self.Layout[i][1] - kernel_gradients)
+                self.Layout[i] = ("Filter", self.Layout[i][1] - kernel_gradients, module[2])
 
             elif module_type == "Batch Norm":
                 pass_gradient, parameters = BatchNorm.Backpropagate(pass_gradient, module[1], history[i], self.LearningRate)
