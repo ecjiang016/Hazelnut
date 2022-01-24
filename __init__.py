@@ -5,3 +5,4 @@ from . import Optimizers
 from . import data
 from . import KernelVisualization
 from . import BatchNormalization
+from . import WeightRegularization

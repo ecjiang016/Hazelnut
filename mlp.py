@@ -3,6 +3,7 @@ import random
 from alive_progress import alive_it as bar
 from .ActivationFunctions import *
 from . import Optimizers
+from . import WeightRegularization
 
 class mlp:
     def __init__(self, Neurons, AF_Type, Weights=None, Biases=None):
@@ -14,6 +15,8 @@ class mlp:
         self.LearningRate = 0.0001
         self.cost_function = lambda Acti, Output: (Acti - Output)*2
         self.Optimizer = Optimizers.Momentum
+        self.Regularization = WeightRegularization.L2
+        self.RegularizationHyperparameter = 0.4
         self.info = True
         
         #Global variables handled by the class (Don't mess with them)
@@ -67,12 +70,12 @@ class mlp:
             
         #Update matrices
         for i in range(1, self.LastLayer+1):
-            weight_gradient = np.matmul(ErrorVector[i], activations[i-1].T) / training_batch
+            weight_gradient = (np.matmul(ErrorVector[i], activations[i-1].T) / training_batch) + self.Regularization(self.Weights[i], self.RegularizationHyperparameter)
             Grad, self.OptimizerCache[i-1] = self.Optimizer(self.LearningRate, weight_gradient, self.OptimizerCache[i-1])
             self.Weights[i] = self.Weights[i] - Grad
 
         for i in range(1, self.LastLayer+1):
-            bias_gradient = np.matmul(ErrorVector[i], np.full((training_batch, training_batch), 1)) / training_batch
+            bias_gradient = (np.matmul(ErrorVector[i], np.full((training_batch, training_batch), 1)) / training_batch) + self.Regularization(self.Biases[i], self.RegularizationHyperparameter)
             Grad, self.OptimizerCache[i-1 + self.LastLayer] = self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache[i-1 + self.LastLayer])
             self.Biases_mat[i] = self.Biases_mat[i] - Grad
         
