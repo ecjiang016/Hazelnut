@@ -16,30 +16,30 @@ def FeedForward(inp, parameters, training=False):
     gamma, beta, test_mean, test_variance = parameters
     epsilon = 0.01 #Constant that helps with stability by preventing division by zero
 
-    if training:
-        mean = np.zeros((N, C))
-        variance = np.zeros((N, C))
-        channel_size = inp[0, 0].size
+    gamma_4D = np.zeros((N, C, H, W))
+    beta_4D = np.zeros((N, C, H, W))
 
-        for n in range(N):
-            for c in range(C):
-                mean[n, c] = np.sum(inp[n, c]) / channel_size
-                variance[n, c] = np.sum(np.square(inp - mean[n, c])) / channel_size
+    for c in range(C):
+        gamma_4D[:, c] = gamma[c]
+        beta_4D[:, c] = beta[c]
+
+    if training:
+        channel_size = H * W
+        
+        mean = np.sum(inp, axis=(2, 3)) / channel_size
+        mean = np.swapaxes(np.swapaxes(np.full((H, W, N, C), mean), 0, 2), 1, 3)
+
+        variance = np.sum(np.square(inp-mean), axis=(2, 3)) / channel_size
+        variance = np.swapaxes(np.swapaxes(np.full((H, W, N, C), variance), 0, 2), 1, 3)
     
     else:
         mean = test_mean
         variance = test_variance
 
-    output = np.zeros((N, C, H, W))
-    cache0 = output.copy()
-    cache1 = output.copy()
-    cache2 = output.copy()
-    for n in range(N):
-        for c in range(C):
-            cache0[n, c] = inp[n, c] - mean[n, c]
-            cache1[n, c] =  1 / np.sqrt(variance[n, c] + epsilon)
-            cache2[n, c] = cache0[n, c] * cache1[n, c] * gamma[c]
-            output[n, c] = cache2[n, c] + beta[c]
+    cache0 = inp - mean
+    cache1 = 1 / np.sqrt(variance + epsilon)
+    cache2 = cache0 * cache1 * gamma_4D
+    output = cache2 + beta_4D
     
     if training: #Update the running mean of the mean and variance
         decay_rate = 0.9 #Constant determining how important the latest mean and variance is in the mean
@@ -63,17 +63,25 @@ def Backpropagate(grad, parameters, cache, learning_rate): #Need to implement op
     N, C, H, W = grad.shape
     gamma, beta, test_mean, test_variance = parameters
 
-    beta_grad = sum(grad)
-    gamma_grad = sum(grad * cache2)
-    for c in range(C): #Update beta and gamma
-        beta[c] -= np.sum(beta_grad[c]) * learning_rate
-        gamma[c] -= np.sum(gamma_grad[c]) * learning_rate
+    gamma_4D = np.zeros((N, C, H, W))
+    beta_4D = np.zeros((N, C, H, W))
 
-    pass_gradient = np.zeros((N, C, H, W))
-    for n in range(N):
-        for c in range(C):
-            variance_grad = np.sum(cache0[n, c] * (-(gamma[c] * (cache1[n, c]**3))/2))
-            mean_grad = np.sum(((-(gamma[c] * cache1[n, c])/2) * grad[n, c])) + ((-2 * variance_grad * np.sum(cache0[n, c]))/C)
-            pass_gradient[n, c] = (grad[n, c] * cache1[n, c]) + ((variance_grad * 2 * cache0[n, c])/C) + (mean_grad/C)
+    for c in range(C):
+        gamma_4D[:, c] = gamma[c]
+        beta_4D[:, c] = beta[c]
+
+    #Update beta and gamma
+    beta -= np.sum(grad, axis=(0, 2, 3)) * learning_rate
+    gamma -= np.sum(grad * cache2, axis=(0, 2, 3)) * learning_rate
+
+    channel_size = H * W
+
+    variance_grad = np.sum(cache0 * (-(gamma * (cache1**3))/2), axis=(2, 3))
+    mean_grad = np.sum(((-(gamma * cache1)/2) * grad), axis=(2, 3)) + ((-2 * variance_grad * np.sum(cache0, axis=(2, 3)))/channel_size)
+
+    variance_grad = np.swapaxes(np.swapaxes(np.full((H, W, N, C), variance_grad), 0, 2), 1, 3)
+    mean_grad = np.swapaxes(np.swapaxes(np.full((H, W, N, C), mean_grad), 0, 2), 1, 3)
+
+    pass_gradient = (grad * cache1) + ((variance_grad * 2 * cache0)/channel_size) + (mean_grad/channel_size)
     
     return pass_gradient, (gamma, beta, test_mean, test_variance)
