@@ -76,8 +76,8 @@ def Backpropagate(grad, parameters, cache, learning_rate): #Need to implement op
 
     channel_size = H * W
 
-    variance_grad = np.sum(cache0 * (-(gamma * (cache1**3))/2), axis=(2, 3))
-    mean_grad = np.sum(((-(gamma * cache1)/2) * grad), axis=(2, 3)) + ((-2 * variance_grad * np.sum(cache0, axis=(2, 3)))/channel_size)
+    variance_grad = np.sum(cache0 * (-(gamma_4D * (cache1**3))/2), axis=(2, 3))
+    mean_grad = np.sum(((-(gamma_4D * cache1)/2) * grad), axis=(2, 3)) + ((-2 * variance_grad * np.sum(cache0, axis=(2, 3)))/channel_size)
 
     variance_grad = np.swapaxes(np.swapaxes(np.full((H, W, N, C), variance_grad), 0, 2), 1, 3)
     mean_grad = np.swapaxes(np.swapaxes(np.full((H, W, N, C), mean_grad), 0, 2), 1, 3)
