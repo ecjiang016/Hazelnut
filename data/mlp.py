@@ -75,9 +75,12 @@ def save(name, neurons, activation_functions, weights, biases, auto_replace=Fals
     infile = open("Training Data MLP", 'rb')
     SavedData = pickle.load(infile)
     if name in SavedData["Name"]:
-        if input("Data already exists under this name. Replace? (Y/N) ") == "Y" or auto_replace:
+        if auto_replace:
             replace(name, neurons, activation_functions, weights, biases)
-            return None
+            return
+        elif input("Data already exists under this name. Replace? (Y/N) ") == "Y":
+            replace(name, neurons, activation_functions, weights, biases)
+            return 
         else:
             name = check(name, SavedData["Name"])
     infile.close()

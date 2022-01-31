@@ -75,9 +75,12 @@ def save(name, layout, auto_replace=False):
     infile = open("Training Data CNN", 'rb')
     SavedData = pickle.load(infile)
     if name in SavedData["Name"]:
-        if input("Data already exists under this name. Replace? (Y/N) ") == "Y" or auto_replace:
+        if auto_replace:
             replace(name, layout)
-            return None
+            return
+        elif input("Data already exists under this name. Replace? (Y/N) ") == "Y":
+            replace(name, layout)
+            return
         else:
             name = check(name, SavedData["Name"])
     infile.close()
