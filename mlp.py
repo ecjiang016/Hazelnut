@@ -15,6 +15,7 @@ class mlp:
         self.LearningRate = 0.0001
         self.cost_function = lambda Acti, Output: (Acti - Output)*2
         self.Optimizer = Optimizers.Momentum
+        self.OptimizerHyperparameter = 0.9
         self.Regularization = WeightRegularization.L2
         self.RegularizationHyperparameter = 0.4
         self.info = True
@@ -71,12 +72,12 @@ class mlp:
         #Update matrices
         for i in range(1, self.LastLayer+1):
             weight_gradient = (np.matmul(ErrorVector[i], activations[i-1].T) / training_batch) + self.Regularization(self.Weights[i], self.RegularizationHyperparameter)
-            Grad, self.OptimizerCache[i-1] = self.Optimizer(self.LearningRate, weight_gradient, self.OptimizerCache[i-1])
+            Grad, self.OptimizerCache[i-1] = self.Optimizer(self.LearningRate, weight_gradient, self.OptimizerCache[i-1], self.OptimizerHyperparameter)
             self.Weights[i] = self.Weights[i] - Grad
 
         for i in range(1, self.LastLayer+1):
             bias_gradient = (np.matmul(ErrorVector[i], np.full((training_batch, training_batch), 1)) / training_batch) + self.Regularization(self.Biases[i], self.RegularizationHyperparameter)
-            Grad, self.OptimizerCache[i-1 + self.LastLayer] = self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache[i-1 + self.LastLayer])
+            Grad, self.OptimizerCache[i-1 + self.LastLayer] = self.Optimizer(self.LearningRate, bias_gradient, self.OptimizerCache[i-1 + self.LastLayer], self.OptimizerHyperparameter)
             self.Biases_mat[i] = self.Biases_mat[i] - Grad
         
         if pass_on_gradient == True:

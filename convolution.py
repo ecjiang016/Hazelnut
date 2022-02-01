@@ -10,6 +10,7 @@ class convolution:
         self.Layout = Layout #Layout = [("Skip", "Begin"), ("Filter", [filter_0, filter_1, filter_2]], "Valid"), ("BatchNorm", (gamma=1, beta=0, test_mean=0, test_variance=0)), ("AF", "ReLU",), ("Skip", "End")]
         self.LearningRate = 0.0001
         self.Optimizer = Optimizers.Momentum
+        self.OptimizerHyperparameter = 0.9
         self.Training = Training
 
         #Global variables handled by the class (Don't mess with them)
@@ -128,7 +129,7 @@ class convolution:
                     padding_size = (module[1].shape[2] -1) //2
                     pass_gradient = pass_gradient[:, :, padding_size:-padding_size, padding_size:-padding_size]
 
-                kernel_gradients, self.OptimizerCache[i] = self.Optimizer(self.LearningRate, kernel_gradients, self.OptimizerCache[i])
+                kernel_gradients, self.OptimizerCache[i] = self.Optimizer(self.LearningRate, kernel_gradients, self.OptimizerCache[i], self.OptimizerHyperparameter)
                 self.Layout[i] = ("Filter", self.Layout[i][1] - kernel_gradients, module[2])
 
             elif module_type == "Batch Norm":
