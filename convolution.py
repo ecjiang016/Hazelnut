@@ -109,9 +109,8 @@ class convolution:
                     N, C, H, W = acti.shape
                     padded_acti = np.zeros((N, C, H+module[1].shape[2] - 1, W+module[1].shape[2] - 1))
 
-                    for n in range(N):
-                        for c in range(C):
-                            padded_acti[n, c] = np.pad(acti[n, c], (module[1].shape[2] -1) //2)
+                    pad_size = (module[1].shape[2] -1) // 2
+                    padded_acti[:, :, pad_size:-pad_size, pad_size:-pad_size] = acti
 
                     acti = padded_acti
 
