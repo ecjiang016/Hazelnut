@@ -11,7 +11,8 @@ def AF_dv(Vector, Type):
     return globals()[Type+"_dv"](Vector)
 
 def Sigmoid(x):
-    return 1/(np.exp(-x)+1)
+    clipped_x = np.clip(x, -200, 200)
+    return 1/(np.exp(-clipped_x)+1)
 
 def Sigmoid_dv(x):
     return Sigmoid(x)*(1-Sigmoid(x))
@@ -23,15 +24,12 @@ def tanh_dv(x):
     return 1-(np.tanh(x)**2)
 
 def ReLU(x):
-    if x > 0:
-         return x
-    else:
-        return 0
+    out = x.copy()
+    out[out < 0] = 0
+    return out
 
 def ReLU_dv(x):
-    if x >= 0:
-        return 1
-    return 0
+    return (x >= 0) * 1
 
 def LeakyReLU(x):
     if x > 0:
@@ -71,8 +69,6 @@ def step(x):
 def step_dv(x):
     return 0
 
-ReLU = np.vectorize(ReLU, otypes=[np.float64])
-ReLU_dv = np.vectorize(ReLU_dv, otypes=[np.float64])
 LeakyReLU = np.vectorize(LeakyReLU, otypes=[np.float64])
 LeakyReLU_dv = np.vectorize(LeakyReLU_dv, otypes=[np.float64])
 step = np.vectorize(step)
