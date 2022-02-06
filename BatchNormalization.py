@@ -46,7 +46,7 @@ def FeedForward(inp, parameters, training=False):
         test_mean = (test_mean * decay_rate) + ((1-decay_rate) * mean)
         test_variance = (test_variance * decay_rate) + ((1-decay_rate) * variance)
     
-    return output, (cache0, cache1, cache2)
+    return output, (cache0, cache1, cache2, gamma_4D)
 
 def Backpropagate(grad, parameters, cache, learning_rate): #Need to implement optimizers
     """
@@ -58,17 +58,10 @@ def Backpropagate(grad, parameters, cache, learning_rate): #Need to implement op
     Returns:
      - The gradient to pass on as numpy array with the same shape as the input array 
     """
-    cache0, cache1, cache2 = cache
+    cache0, cache1, cache2, gamma_4D = cache
 
     N, C, H, W = grad.shape
     gamma, beta, test_mean, test_variance = parameters
-
-    gamma_4D = np.zeros((N, C, H, W))
-    beta_4D = np.zeros((N, C, H, W))
-
-    for c in range(C):
-        gamma_4D[:, c] = gamma[c]
-        beta_4D[:, c] = beta[c]
 
     #Update beta and gamma
     beta -= np.sum(grad, axis=(0, 2, 3)) * learning_rate
