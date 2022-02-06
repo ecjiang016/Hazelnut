@@ -1,6 +1,7 @@
 from .Reformatting import col2im, col2im_back
 from .Reformatting import memory_strided_im2col as im2col
 import numpy as np
+from numpy.lib.stride_tricks import as_strided
 
 def conv(inp, kern):
     """
@@ -24,14 +25,11 @@ def conv(inp, kern):
 
     mul = np.matmul(kern_col, inp_col)
 
-    single_output_len = H_prime * W_prime
+    s = mul.itemsize
+    MH, MW = mul.shape
+    split_mul = as_strided(mul, shape=(N, MH, MW//N), strides=(MW//N*s, MW*s, s)).copy()
 
-    output = []
-    for i in range(N):
-        index = i*single_output_len
-        output.append(col2im(mul[:, index:index+single_output_len], H_prime, W_prime, C, F))
-
-    return np.array(output)
+    return split_mul.reshape(N, MH, H_prime, W_prime)
         
 def conv_kern_grad(acti, grad):
     """
@@ -77,14 +75,11 @@ def conv_full(inp, kern):
 
     mul = np.matmul(kern_col, inp_col)
 
-    single_output_len = H_prime * W_prime
+    s = mul.itemsize
+    MH, MW = mul.shape
+    split_mul = as_strided(mul, shape=(N, MH, MW//N), strides=(MW//N*s, MW*s, s)).copy()
 
-    output = []
-    for i in range(N):
-        index = i*single_output_len
-        output.append(col2im(mul[:, index:index+single_output_len], H_prime, W_prime, C, F))
-
-    return np.array(output)
+    return split_mul.reshape(N, MH, H_prime, W_prime)
 
 def conv_backward_naive(x, w, mode):
     """
