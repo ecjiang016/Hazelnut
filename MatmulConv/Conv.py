@@ -18,8 +18,7 @@ def conv(inp, kern):
     H_prime = H - HH + 1
     W_prime = W - WW + 1
 
-    inp_cols = np.array([im2col(tensor, HH) for tensor in inp])
-    inp_col = np.hstack(inp_cols)
+    inp_col = im2col(inp, HH)
 
     kern_col = np.reshape(np.flip(kern, (2, 3)), (F, -1))
 
@@ -27,9 +26,9 @@ def conv(inp, kern):
 
     s = mul.itemsize
     MH, MW = mul.shape
-    split_mul = as_strided(mul, shape=(N, MH, MW//N), strides=(MW//N*s, MW*s, s)).copy()
+    split_mul = as_strided(mul, shape=(N, MH, MW//N), strides=(MW//N*s, MW*s, s)).copy() #Not sure if copy is needed
 
-    return split_mul.reshape(N, MH, H_prime, W_prime)
+    return split_mul.reshape((N, MH, H_prime, W_prime))
         
 def conv_kern_grad(acti, grad):
     """
@@ -68,8 +67,7 @@ def conv_full(inp, kern):
     padded_inp = np.zeros((N, C, H+HH+HH-2, W+WW+WW-2))
     padded_inp[:, :, HH-1:-HH+1, WW-1:-WW+1] = inp #Apply full padding
     
-    inp_cols = np.array([im2col(tensor, HH) for tensor in padded_inp])
-    inp_col = np.hstack(inp_cols)
+    inp_col = im2col(padded_inp, HH)
 
     kern_col = np.reshape(np.flip(kern, (2, 3)), (F, -1))
 
@@ -77,9 +75,9 @@ def conv_full(inp, kern):
 
     s = mul.itemsize
     MH, MW = mul.shape
-    split_mul = as_strided(mul, shape=(N, MH, MW//N), strides=(MW//N*s, MW*s, s)).copy()
+    split_mul = as_strided(mul, shape=(N, MH, MW//N), strides=(MW//N*s, MW*s, s)).copy() #Not sure if copy is needed
 
-    return split_mul.reshape(N, MH, H_prime, W_prime)
+    return split_mul.reshape((N, MH, H_prime, W_prime))
 
 def conv_backward_naive(x, w, mode):
     """

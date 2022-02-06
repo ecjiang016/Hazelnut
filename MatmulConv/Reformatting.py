@@ -1,7 +1,26 @@
 import numpy as np
-from skimage.util.shape import view_as_windows
+from numpy.lib.stride_tricks import as_strided
+#from skimage.util.shape import view_as_windows
 
-def memory_strided_im2col(x, kernel_size):
+def memory_strided_im2col(x, KS): 
+    """
+    Args:
+    x: image matrix to be translated into columns, (N,C,H,W)
+    KS: length of a side of a square kernel
+
+    Returns:
+    A (C*KS*KS, N*OH*OW) matrix
+    """
+    N, C, H, W = x.shape
+    OH = H - KS + 1 #Output height
+    OW = W - KS + 1 #Output width
+    SN, SC, SH, SW = x.strides
+    return as_strided(x,
+               shape=(C, KS, KS, N, OH, OW),
+               strides=(SC, SH, SW, SN, SH, SW),
+               ).reshape((C*KS*KS, N*OH*OW))
+
+def skimage_strided_im2col(x, kernel_size):
     """
     Args:
     x: image matrix to be translated into columns, (C,H,W)
@@ -12,10 +31,10 @@ def memory_strided_im2col(x, kernel_size):
     new_h = (H-hh) // stride + 1, new_w = (W-ww) // stride + 1
     """
 
-    output_shape = x.shape[1] - kernel_size + 1
-    cols = view_as_windows(x, (1, kernel_size, kernel_size))
-    output = [cols[i].reshape(output_shape*output_shape, kernel_size*kernel_size).T for i in range(x.shape[0])]
-    return np.vstack(output)
+    #output_shape = x.shape[1] - kernel_size + 1
+    #cols = view_as_windows(x, (1, kernel_size, kernel_size))
+    #output = [cols[i].reshape(output_shape*output_shape, kernel_size*kernel_size).T for i in range(x.shape[0])]
+    #return np.vstack(output)
 
 def memory_strided_im2col_single(x, kernel_size):
     """
@@ -30,8 +49,8 @@ def memory_strided_im2col_single(x, kernel_size):
     new_h = (H-hh) // stride + 1, new_w = (W-ww) // stride + 1
     """
 
-    output_shape = x.shape[1] - kernel_size + 1
-    return view_as_windows(x, (kernel_size, kernel_size)).reshape(output_shape*output_shape, kernel_size*kernel_size).T
+    #output_shape = x.shape[1] - kernel_size + 1
+    #return view_as_windows(x, (kernel_size, kernel_size)).reshape(output_shape*output_shape, kernel_size*kernel_size).T
 
 def im2col(x,hh,ww):
 
