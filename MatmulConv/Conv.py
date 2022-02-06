@@ -67,12 +67,8 @@ def conv_full(inp, kern):
     H_prime = H + HH - 1
     W_prime = W + WW - 1
 
-    #padded_inp = np.zeros((N, C, H+HH-1, W+WW-1))
-    #for n in range(N): #Sucky nested loop but idk what else to do
-        #for c in range(C):
-            #padded_inp[n, c] = np.pad(inp[n, c], HH-1)
-
-    padded_inp = np.array([[np.pad(inp[n, c], HH-1) for c in range(C)] for n in range(N)])
+    padded_inp = np.zeros((N, C, H+HH+HH-2, W+WW+WW-2))
+    padded_inp[:, :, HH-1:-HH+1, WW-1:-WW+1] = inp #Apply full padding
     
     inp_cols = np.array([im2col(tensor, HH) for tensor in padded_inp])
     inp_col = np.hstack(inp_cols)

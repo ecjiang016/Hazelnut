@@ -57,13 +57,11 @@ class convolution:
 
                 if module[2] == "Same":
                     N, C, H, W = activations.shape
-                    padded_activations = np.zeros((N, C, H + module[1].shape[2] - 1, W + module[1].shape[2] - 1))
-                    for n in range(N):
-                        for c in range(C):
-                            padded_activations[n, c] = np.pad(activations[n, c], (module[1].shape[2] - 1) //2)
-                    activations = padded_activations
+                    padded_activations = np.zeros((N, C, H+module[1].shape[2] - 1, W+module[1].shape[2] - 1))
 
-                    activations = np.array(padded_activations)
+                    pad_size = (module[1].shape[2] -1) // 2
+                    padded_activations[:, :, pad_size:-pad_size, pad_size:-pad_size] = activations
+                    activations = padded_activations
 
                 activations = conv(activations, module[1])
 
