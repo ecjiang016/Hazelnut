@@ -111,3 +111,6 @@ class mlp:
 
         for layer in range(1, self.LastLayer+1):
             self.Biases[layer] = np.array([self.Biases_mat[layer][:, 0]]).T
+          
+    def OptimizerRecache(self, value):
+        self.OptimizerCache = [value for _ in range(self.LastLayer*2)]
