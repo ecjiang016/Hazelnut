@@ -148,3 +148,9 @@ class convolution:
 
             else:
                 raise ValueError("Invalid convolution module layout")
+                
+    def OptimizerRecache(self, value):
+        self.OptimizerCache = {}
+        for i, module in enumerate(self.Layout):
+            if module[0] == "Filter":
+                self.OptimizerCache[i] = value
