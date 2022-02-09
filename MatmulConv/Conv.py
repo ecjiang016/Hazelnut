@@ -24,11 +24,10 @@ def conv(inp, kern):
 
     mul = np.matmul(kern_col, inp_col)
 
-    s = mul.itemsize
-    MH, MW = mul.shape
-    split_mul = as_strided(mul, shape=(N, MH, MW//N), strides=(MW//N*s, MW*s, s)).copy() #Not sure if copy is needed
+    S = mul.itemsize
+    SH, SW = mul.strides
 
-    return split_mul.reshape((N, MH, H_prime, W_prime))
+    return as_strided(mul, shape=(N, F, H_prime, W_prime), strides=(SH // N, SH, W_prime * S, S))
         
 def conv_kern_grad(acti, grad):
     """
@@ -73,11 +72,10 @@ def conv_full(inp, kern):
 
     mul = np.matmul(kern_col, inp_col)
 
-    s = mul.itemsize
-    MH, MW = mul.shape
-    split_mul = as_strided(mul, shape=(N, MH, MW//N), strides=(MW//N*s, MW*s, s)).copy() #Not sure if copy is needed
+    S = mul.itemsize
+    SH, SW = mul.strides
 
-    return split_mul.reshape((N, MH, H_prime, W_prime))
+    return as_strided(mul, shape=(N, F, H_prime, W_prime), strides=(SH // N, SH, W_prime * S, S))
 
 def conv_backward_naive(x, w, mode):
     """
