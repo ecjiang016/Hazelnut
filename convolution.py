@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.signal import convolve
 from .ActivationFunctions import *
 from .MatmulConv.Conv import conv, conv_full
 from . import Optimizers
