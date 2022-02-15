@@ -1,6 +1,7 @@
+from re import X
 import numpy as np
 
-function_names = ['AF', 'Sigmoid', 'tanh', 'ReLU', 'LeakyReLU', 'step']
+function_names = ['AF', 'Sigmoid', 'Softmax', 'tanh', 'ReLU', 'LeakyReLU', 'step']
 function_names = function_names + [name+"_dv" for name in function_names]
 __all__ = function_names
 
@@ -43,22 +44,12 @@ def LeakyReLU_dv(x):
     elif x <= 0:
         return 0.2
 
-def Softmax_single(x):
-    numerator = np.exp(x)
-    denominator = np.sum(numerator)
-    return np.array([numerator[element]/denominator for element in range(len(x))])
-
 def Softmax(x):
-    vectors = x.T
-    return np.array([Softmax_single(vectors[i]) for i in range(len(vectors))]).T
+    exps = x - np.max(x, axis=0) #Add numerical stability
+    return exps/np.sum(exps, axis=0)
 
-def Softmax_single_dv(x, y):
-    return np.matmul((np.diag(y.T[0]) - np.matmul(y, y.T)), x).T[0]
-
-#def Softmax_dv(x):
-    #vectors = x.T
-    #const = Activations[LastLayer].T
-    #return np.array([Softmax_dv_single(np.array([vectors[i]]).T, np.array([const[i]]).T) for i in range(len(vectors))]).T
+def Softmax_dv(x):
+    pass
 
 def step(x):
     if x >= 0.5:
@@ -68,6 +59,12 @@ def step(x):
 
 def step_dv(x):
     return 0
+
+def identity(x):
+    return x
+
+def identity_dv(x):
+    return 1
 
 LeakyReLU = np.vectorize(LeakyReLU, otypes=[np.float64])
 LeakyReLU_dv = np.vectorize(LeakyReLU_dv, otypes=[np.float64])
