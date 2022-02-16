@@ -1,4 +1,3 @@
-from re import X
 import numpy as np
 
 function_names = ['AF', 'Sigmoid', 'Softmax', 'tanh', 'ReLU', 'LeakyReLU', 'step']
