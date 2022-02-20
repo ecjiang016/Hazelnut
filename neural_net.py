@@ -1,6 +1,6 @@
 import pickle
 import numpy as np
-from .modules.Reshape import Convert4Dto3D
+from .modules.Reshape import Convert4Dto3D, Convert3Dto4D
 
 class NN:
     def __init__(self):
@@ -58,9 +58,11 @@ class NN:
         Builds each layer given the constant input shape to the net
 
         Args:
-        - inp_size: A tuple with elements (channels, height, width)
+        - inp_size: A tuple with elements (channels, height, width) or (size). The first for CNN and the latter for MLP
         """
         self.layout = []
+
+        end_reshape = True
 
         if len(inp_size) == 4:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
@@ -80,6 +82,13 @@ class NN:
         for module in self.layout:
             module.Build(pass_inp)
             pass_inp = module.Forward(pass_inp)
+
+            if pass_inp.shape != inp_size: #If there is some kind of reshape, don't reshape the activations at the end
+                end_reshape = False
+
+        if end_reshape: #Reshape back from (N, C, H*W) t0 (N, C, H, W)
+            self.layout.append(Convert3Dto4D(H, W))
+
 
     def save(self, PATH):
         save_list = []

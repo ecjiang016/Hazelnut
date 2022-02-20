@@ -55,3 +55,31 @@ class Convert4Dto3D:
 
     def Load(self):
         pass
+
+class Convert3Dto4D:
+    """
+    Reverse of Convert4Dto3D. Converts from shape to (N, C, H*W), (N, C, H, W)
+    """
+    def __init__(self, H, W):
+        self.H = H
+        self.W = W
+    
+    def Forward(self, inp):
+        N, C, _, _ = inp.shape
+        return inp.reshape(N, C, self.H, self.W)
+
+    def Forward_training(self, inp):
+        self.N, self.C, _ = inp.shape
+        return inp.reshape(self.N, self.C, self.H, self.W)
+
+    def Backward(self, inp):
+        return inp.reshape(self.N, self.C, -1)
+
+    def Build(self):
+        pass
+
+    def Save(self):
+        return {'args':(), 'var':(self.H, self.W)}
+
+    def Load(self, var):
+        self.H, self.W = var
