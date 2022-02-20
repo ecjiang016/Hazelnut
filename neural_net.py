@@ -38,9 +38,9 @@ class NN:
 
     def train(self, inp, correct_out):
         out = self.forward_train(inp)
-        self.backpropagate(self.loss.Backward(out, correct_out))
+        self.backpropagate(self.loss_function.Backward(out, correct_out))
 
-        return self.loss.Forward(out, correct_out)
+        return self.loss_function.Forward(out, correct_out)
 
     def add(self, module) -> None:
         self.layout.append(module)
@@ -52,6 +52,9 @@ class NN:
                 module.optimizer = optimizer
             except AttributeError:
                 pass
+
+    def loss(self, loss_function):
+        self.loss_function = loss_function
 
     def build(self, inp_size) -> None:
         """
