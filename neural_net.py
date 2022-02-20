@@ -86,7 +86,7 @@ class NN:
             if pass_inp.shape != inp_size: #If there is some kind of reshape, don't reshape the activations at the end
                 end_reshape = False
 
-        if end_reshape: #Reshape back from (N, C, H*W) t0 (N, C, H, W)
+        if end_reshape: #Reshape back from (N, C, H*W) to (N, C, H, W)
             self.layout.append(Convert3Dto4D(H, W))
 
 
