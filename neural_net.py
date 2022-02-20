@@ -64,7 +64,7 @@ class NN:
 
         end_reshape = True
 
-        if len(inp_size) == 4:
+        if len(inp_size) == 3:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
             C, H, W = inp_size.shape
             pass_inp = np.zeros((1, C, H * W))
