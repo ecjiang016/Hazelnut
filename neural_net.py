@@ -1,10 +1,10 @@
 import pickle
 import numpy as np
-from .modules.reshape import Convert4Dto3D
+from .modules.Reshape import Convert4Dto3D
 
 class NN:
     def __init__(self):
-        self.layout = []
+        pass
 
     def __repr__(self) -> str:
         str_ = ""
@@ -42,10 +42,10 @@ class NN:
 
         return self.loss.Forward(out, correct_out)
 
-    def add(self, module):
+    def add(self, module) -> None:
         self.layout.append(module)
 
-    def optimizer(self, optimizer):
+    def optimizer(self, optimizer) -> None:
         for module in self.layout:
             try:
                 module.optimizer
@@ -53,13 +53,15 @@ class NN:
             except AttributeError:
                 pass
 
-    def build(self, inp_size):
+    def build(self, inp_size) -> None:
         """
         Builds each layer given the constant input shape to the net
 
         Args:
         - inp_size: A tuple with elements (channels, height, width)
         """
+        self.layout = []
+
         if len(inp_size) == 4:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
             C, H, W = inp_size.shape
