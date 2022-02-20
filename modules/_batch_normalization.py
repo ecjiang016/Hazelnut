@@ -3,8 +3,7 @@ from . import Optimizers
 
 class BatchNorm:
     """
-    - epsilon: Constant that helps with stability by preventing division by zero
-    - 
+    Batch normalization
     """
     def __init__(self) -> None:
         self.decay_rate = 0.9 #Constant determining how important the latest mean and variance is in the mean
