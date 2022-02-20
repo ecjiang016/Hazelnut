@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from . import Optimizers
-from ..utils.reshape_to_indices import reshape_to_indices
+from ..utils import reshape_to_indices
 from ..utils.layer_init import He_init
 
 class Conv:
