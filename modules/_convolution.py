@@ -34,38 +34,65 @@ class Conv:
         if self.PAD:
             inp = self.pad(inp)
         
-        return np.matmul(self.filter, inp[:, self.channel_indices, self.width_indices])
+        SN, SC, SH, SW = inp.strides
+        col = as_strided(
+            inp,
+            (inp.shape[0], self.OW, self.OH, self.KS, self.KS, self.C), 
+            (SN, SW, SH, SW, SH, SC),
+            writeable=False)
+
+        return np.swapaxes(np.tensordot(col, self.filter, axes=3), 1, 3)
 
     def Forward_training(self, inp):
         if self.PAD:
             inp = self.pad(inp)
 
         self.training_cache = inp.copy()
-        
-        return np.matmul(self.filter, inp[:, self.channel_indices, self.width_indices])
+        SN, SC, SH, SW = inp.strides
+        self.acti_strides = (SN, SW, SH, SW, SH, SC)
+        col = as_strided(
+            inp,
+            (inp.shape[0], self.OW, self.OH, self.KS, self.KS, self.C), 
+            self.acti_strides,
+            writeable=False)
+
+        return np.swapaxes(np.tensordot(col, self.filter, axes=3), 1, 3)
 
     def Backward(self, inp):
-        #Calculate filter gradient and update filter
-        reshaped_inp = np.reshape(np.flip(np.swapaxes(inp, 0, 1), 2), (self.C, -1))
-        self.filter -= self.optimizer.use(np.swapaxes(np.matmul(reshaped_inp.view(), np.swapaxes(self.training_cache, 0, 1)[:, self.channel_indices, self.width_indices]), 0, 1) / inp.shape[0])
-        
-        #Calculate the next gradient
-        reshaped_inp2 = np.reshape(np.flip(inp, 2), (inp.shape[0], -1))
-        pass_gradient = np.swapaxes(np.matmul(reshaped_inp2.view(), self.filter[self.filter_reshape_indices]), 0, 1)
+        reshaped_inp = np.swapaxes(np.swapaxes(inp, 0, 3), 1, 2)
 
+        #Calculate the next gradient
+        SW, SH, SC, SF = self.filter.strides
+        filter_col = as_strided(
+            np.flip(self.filter, axis=(0, 1)),
+            (self.N, self.W, self.H, self.OW, self.OH, self.F), 
+            (SF, SW, SH, SW, SH, SC),
+            writeable=False)
+
+        pass_gradient = np.swapaxes(np.tensordot(filter_col, reshaped_inp, axes=3), 1, 3)
+
+        #Calculate filter gradient and update filter
+        cache_acti_col = as_strided(
+            inp,
+            (inp.shape[0], self.KS, self.KS, self.OW, self.OH, self.F), 
+            self.acti_strides,
+            writeable=False)
+            
+        filter_grad = np.swapaxes(np.tensordot(cache_acti_col, reshaped_inp, axes=3), 1, 3)
+        self.filter = self.optimizer.use(np.sum(filter_grad, axis=0))
+        
         if self.PAD:
             return pass_gradient[self.unpadding_indices]
         
         return pass_gradient
          
-
     def pad(self, inp):
-        padded_activations = np.zeros((inp.shape[0], self.C, self.H+self.KS - 1, self.W+self.KS - 1))
+        padded_activations = np.zeros((inp.shape[0], self.C, self.H, self.W))
         padded_activations[:, :, self.PAD_SIZE:-self.PAD_SIZE, self.PAD_SIZE:-self.PAD_SIZE] = inp
         return padded_activations
 
     def pad_filter(self, inp):
-        padded_filter = np.zeros((inp.shape[0], self.C, self.H+self.KS+self.KS-2, self.W+self.KS+self.KS-2))
+        padded_filter = np.zeros((inp.shape[0], self.C, self.PFH, self.PDW))
         padded_filter[:, :, self.PAD_F_SIZE:-self.PAD_F_SIZE, self.PAD_F_SIZE:-self.PAD_F_SIZE] = inp
         return padded_filter
     
@@ -74,7 +101,7 @@ class Conv:
 
         #Initialize filters
         self.filter = self.init_method(self.F, self.C, self.KS)
-        self.filter = np.reshape(np.flip(self.filter, (2, 3)), (self.F, -1))
+        self.filter = np.swapaxes(np.swapaxes(self.filter, 0, 3), 1, 2)
 
         #Calculate output dimensions
         self.OH = self.H - self.KS + 1
@@ -83,51 +110,17 @@ class Conv:
         #Padding calculations
         if self.mode == 'Same':
             self.PAD_SIZE = (self.KS - 1) // 2
+            #Zero padding matrix 
             self.H += self.KS - 1
             self.W += self.KS - 1
-        
+            #Fix output dimensions
+            self.OH = self.H
+            self.OW = self.W
+
+        #Padding calculating for full convolution
         self.PAD_F_SIZE = self.KS - 1
-
-        #Generate indices for feed forward
-        
-        indices = np.arange(self.C*self.H*self.W).reshape(self.C, self.H, self.W)
-        #Use im2col on it
-        SC, SH, SW = indices.strides
-        indices = as_strided(indices,
-                            shape=(self.C, self.KS, self.KS, self.OH, self.OW),
-                            strides=(SC, SH, SW, SH, SW),
-                            ).reshape((self.C*self.KS*self.KS, self.OH*self.OW))
-        #Some magic happens here
-        self.channel_indices = indices // (self.H * self.W) % self.C
-        self.width_indices = indices % (self.H * self.W)
-
-
-        #Generate indices for the pass gradient convolution
-        @reshape_to_indices
-        def filter_im2col(inp):
-            reshaped_inp = inp.reshape(self.F, self.C, self.KS, self.KS)
-            SF, SC, SH, SW = reshaped_inp.strides
-            out = as_strided(reshaped_inp,
-                                shape=(self.C, self.KS, self.KS, self.F, self.OH, self.OW),
-                                strides=(SC, SH, SW, SF, SH, SW),
-                                ).reshape((self.C*self.KS*self.KS, self.F*self.OH*self.OW))
-
-            return out
-
-        self.filter_reshape_indices = filter_im2col(self.filter)
-
-
-        #Generate indices for "unpadding" the pass gradient for a same mode convultion layer
-        if self.PAD:
-            @reshape_to_indices
-            def unpad(inp):
-                reshaped_inp = inp.reshape(self.H+(2*self.PAD_SIZE), self.W+(2*self.PAD_SIZE))
-                reshaped_inp = reshaped_inp[self.PAD_SIZE:-self.PAD_SIZE, self.PAD_SIZE:-self.PAD_SIZE]
-
-            self.unpadding_indices = unpad(np.zeros(self.H+(2*self.PAD_SIZE), self.W+(2*self.PAD_SIZE)))
-            self.unpadding_indices.insert(..., 0)
-            self.unpadding_indices.insert(..., 0)
-            self.unpadding_indices = tuple(self.unpadding_indices)
+        self.PFH = self.H + self.KS + self.KS - 2
+        self.PDW = self.W + self.KS + self.KS - 2
 
     def Save(self):
         return {'args':(self.F, self.KS, self.mode, self.init_method), 'var':(self.filter, self.optimizer)}
