@@ -31,12 +31,17 @@ class Linear:
         return self.training_cache
 
     def Backward(self, inp):
-        self.weights -= self.optimizer.use(np.matmul(self.weights, self.training_cache.T) / inp.shape[0])
-        self.biases -= self.optimizer.use(np.sum(inp, axis=1) / inp.shape[0])
+        self.weights -= self.optimizer_weights.use(np.matmul(self.weights, self.training_cache.T) / inp.shape[0])
+        self.biases -= self.optimizer_biases.use(np.sum(inp, axis=1) / inp.shape[0])
         return np.matmul(self.weights.T, inp)
 
     def Build(self, shape):
         self.inp_size = shape[0]
+
+        #Make 2 different optimizers for weights and biases
+        from copy import deepcopy
+        self.optimizer_weights = deepcopy(self.optimizer)
+        self.optimizer_biases = self.optimizer;
 
         self.weights, self.biases = self.init_method(self.Neurons, self.inp_size)
 
