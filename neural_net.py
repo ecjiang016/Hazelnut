@@ -1,9 +1,12 @@
 import pickle
 import numpy as np
+from copy import deepcopy
 
 class NN:
     def __init__(self):
-        pass
+        self.layout = []
+        self.loss = None
+        self.optimizer = None
 
     def __repr__(self) -> str:
         str_ = ""
@@ -37,9 +40,9 @@ class NN:
 
     def train(self, inp, correct_out):
         out = self.forward_train(inp)
-        self.backpropagate(self.loss_function.Backward(out, correct_out))
+        self.backpropagate(self.loss.Backward(out, correct_out))
 
-        return self.loss_function.Forward(out, correct_out)
+        return self.loss.Forward(out, correct_out)
 
     def add(self, module) -> None:
         try:
@@ -48,16 +51,6 @@ class NN:
             self.layout = []
             self.layout.append(module)
 
-    def optimizer(self, optimizer) -> None:
-        for module in self.layout:
-            try:
-                module.optimizer
-                module.optimizer = optimizer
-            except AttributeError:
-                pass
-
-    def loss(self, loss_function):
-        self.loss_function = loss_function
 
     def build(self, inp_size) -> None:
         """
@@ -66,6 +59,8 @@ class NN:
         Args:
         - inp_size: A tuple with elements (channels, height, width) or (size). The first for CNN and the latter for MLP
         """
+        assert self.loss, "No loss function specified"
+        assert self.optimizer, "No optimizer specified"
 
         if len(inp_size) == 3:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
@@ -81,8 +76,16 @@ class NN:
             raise ValueError("I have no idea what you're doing with the input size")
 
         for module in self.layout:
+            try:
+                module.optimizer
+                module.optimizer = deepcopy(self.optimizer)
+            except AttributeError: #Module doesn't need an optimizer
+                pass
+        
             module.Build(pass_inp.shape)
             pass_inp = module.Forward(pass_inp)
+            if np.isnan(np.min(pass_inp)):
+                raise SystemError("NaN incountered.")
 
 
     def save(self, PATH):
