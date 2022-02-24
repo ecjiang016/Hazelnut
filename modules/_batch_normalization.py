@@ -1,4 +1,5 @@
 import numpy as np
+from torch import DictType
 from . import Optimizers
 
 class BatchNorm:
@@ -38,7 +39,7 @@ class BatchNorm:
 
     def Backward(self, grad):
         variance_grad = np.sum(self.cache0 * (-(self.gamma * np.power(self.cache1, 3))/2)[None, :, None, None], axis=(0, 2, 3))
-        mean_grad = np.sum((((self.gamma * self.cache1)/2)[None, :, None, None] * -grad), axis=(0, 2)) + ((-2 * variance_grad * np.sum(self.cache0, axis=(0, 2)))/self.NHW)
+        mean_grad = np.sum((((self.gamma * self.cache1)/2)[None, :, None, None] * -grad), axis=(0, 2, 3)) + ((-2 * variance_grad * np.sum(self.cache0, axis=(0, 2, 3)))/self.NHW)
         
         #Update beta and gamma
         self.beta -= self.optimizer.use(np.sum(grad, axis=(0, 2, 3)) / self.NHW)
@@ -49,8 +50,8 @@ class BatchNorm:
     def Build(self, shape):
         N, C, H, W = shape
         self.NHW = N*H*W
-        self.gamma = np.full(C, self.gamma)
-        self.beta = np.full(C, self.beta) 
+        self.gamma = np.full(C, self.gamma, dtype='float32')
+        self.beta = np.full(C, self.beta, dtype='float32') 
 
         #Mean and variance for when batch norm is not used in training
         self.test_mean = np.full(C, self.test_mean) 
