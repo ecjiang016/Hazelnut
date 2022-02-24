@@ -53,36 +53,36 @@ class Conv:
         col = as_strided(
             inp,
             (inp.shape[0], self.OW, self.OH, self.KS, self.KS, self.C), 
-            self.acti_strides,
+            (SN, SW, SH, SW, SH, SC),
             writeable=False)
 
         return np.swapaxes(np.tensordot(col, self.filter, axes=3), 1, 3)
 
     def Backward(self, inp):
-        reshaped_inp = np.swapaxes(np.swapaxes(inp, 0, 3), 1, 2)
+        reshaped_inp = np.swapaxes(np.swapaxes(inp, 0, 3), 1, 2) # (N, F, OH, OW) -> (OW, OH, F, N)
 
         #Calculate the next gradient
         SW, SH, SC, SF = self.filter.strides
         filter_col = as_strided(
             np.flip(self.filter, axis=(0, 1)),
-            (self.N, self.W, self.H, self.OW, self.OH, self.F), 
-            (SF, SW, SH, SW, SH, SC),
+            (self.W, self.C, self.H, self.OW, self.OH, self.F), 
+            (SW, SC, SH, SW, SH, SF),
             writeable=False)
 
-        pass_gradient = np.swapaxes(np.tensordot(filter_col, reshaped_inp, axes=3), 1, 3)
+        pass_gradient = np.swapaxes(np.tensordot(filter_col, reshaped_inp, axes=3), 0, 3) # (W, C, H, N) -> (N, C, H, W)
 
         #Calculate filter gradient and update filter
         cache_acti_col = as_strided(
-            inp,
-            (inp.shape[0], self.KS, self.KS, self.OW, self.OH, self.F), 
-            self.acti_strides,
+            self.training_cache,
+            (self.C, self.KS, self.KS, self.OW, self.OH, self.N), 
+            (self.SC, self.SW, self.SH, self.SW, self.SH, self.SN),
             writeable=False)
             
-        filter_grad = np.swapaxes(np.tensordot(cache_acti_col, reshaped_inp, axes=3), 1, 3)
+        filter_grad = np.swapaxes(np.swapaxes(np.tensordot(cache_acti_col, np.swapaxes(reshaped_inp, 2, 3), axes=3), 1, 3), 0, 1) # (C, KS[W], KS[H], N) -> (N, C, KS[H], KS[W])
         self.filter = self.optimizer.use(np.sum(filter_grad, axis=0))
         
         if self.PAD:
-            return pass_gradient[self.unpadding_indices]
+            return pass_gradient[:, :, self.PAD:-self.PAD, self.PAD:-self.PAD]
         
         return pass_gradient
          
@@ -127,19 +127,3 @@ class Conv:
 
     def Load(self, var):
         self.filter, self.optimizer = var
-
-
-if __name__ == '__main__':
-    conv = Conv(32, 3, mode='Valid')
-    conv.Precache(np.zeros((1, 32, 8, 8)))
-
-    inp = np.arange(24).reshape(2, 3, 2, 2)
-    #out = conv.Forward_training(inp)
-    
-    #inps = np.swapaxes(inp, 0, 1)[:, conv.channel_indices, conv.width_indices]
-
-    #a = np.reshape(np.flip(np.swapaxes(inp, 0, 1), 2), (2, -1))
-    #print(a)
-
-    #b = np.reshape(np.flip(inp, 2), (2, -1))
-    #print(b)
