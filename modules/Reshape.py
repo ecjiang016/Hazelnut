@@ -2,8 +2,7 @@ import numpy as np
 
 class Flatten:
     """
-    Reshapes from shape (N, C, H, W) ... stored as (N, C, H*W) in the NN memory ... 
-    to shape (C*H*W, N)
+    Reshapes from shape (N, C, H, W) to shape (C*H*W, N)
     """
     def __init__(self):
         pass
@@ -12,13 +11,13 @@ class Flatten:
         return inp.reshape(inp.shape[0], -1).T
 
     def Forward_training(self, inp):
-        self.N, self.C, self.HW = inp.shape
+        self.N, self.C, self.H, self.W = inp.shape
         return inp.reshape(self.N, -1).T
 
     def Backward(self, inp):
-        return inp.T.reshape(self.N, self.C, self.HW)
+        return inp.T.reshape(self.N, self.C, self.H, self.W)
 
-    def Build(self):
+    def Build(self, _):
         pass
 
     def Save(self):
@@ -26,60 +25,3 @@ class Flatten:
 
     def Load(self):
         pass
-
-class Convert4Dto3D:
-    """
-    Hazelnut's convolution layers take inputs of shape (N, C, H*W).
-
-    This converts CNN inputs from shape (N, C, H, W) to (N, C, H*W) and should be done automatically by Hazelnut
-    """
-    def __init__(self):
-        pass
-    
-    def Forward(self, inp):
-        N, C, _, _ = inp.shape
-        return inp.reshape(N, C, -1)
-
-    def Forward_training(self, inp):
-        self.N, self.C, self.H, self.W = inp.shape
-        return inp.reshape(self.N, self.C, -1)
-
-    def Backward(self, inp):
-        return inp.reshape(self.N, self.C, self.H, self.W)
-
-    def Build(self):
-        pass
-
-    def Save(self):
-        return {'args':(), 'var':()}
-
-    def Load(self):
-        pass
-
-class Convert3Dto4D:
-    """
-    Reverse of Convert4Dto3D. Converts from shape to (N, C, H*W), (N, C, H, W)
-    """
-    def __init__(self, H, W):
-        self.H = H
-        self.W = W
-    
-    def Forward(self, inp):
-        N, C, _, _ = inp.shape
-        return inp.reshape(N, C, self.H, self.W)
-
-    def Forward_training(self, inp):
-        self.N, self.C, _ = inp.shape
-        return inp.reshape(self.N, self.C, self.H, self.W)
-
-    def Backward(self, inp):
-        return inp.reshape(self.N, self.C, -1)
-
-    def Build(self):
-        pass
-
-    def Save(self):
-        return {'args':(), 'var':(self.H, self.W)}
-
-    def Load(self, var):
-        self.H, self.W = var

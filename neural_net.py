@@ -43,7 +43,11 @@ class NN:
         return self.loss_function.Forward(out, correct_out)
 
     def add(self, module) -> None:
-        self.layout.append(module)
+        try:
+            self.layout.append(module)
+        except AttributeError: #If self.layout doesn't exist, make one
+            self.layout = []
+            self.layout.append(module)
 
     def optimizer(self, optimizer) -> None:
         for module in self.layout:
@@ -63,16 +67,11 @@ class NN:
         Args:
         - inp_size: A tuple with elements (channels, height, width) or (size). The first for CNN and the latter for MLP
         """
-        self.layout = []
-
-        end_reshape = True
 
         if len(inp_size) == 3:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
             C, H, W = inp_size.shape
-            pass_inp = np.zeros((1, C, H * W))
-
-            self.layout.insert(0, Convert4Dto3D())
+            pass_inp = np.zeros((1, C, H, W))
 
         elif len(inp_size) == 1:
             #MLP ig
@@ -83,14 +82,8 @@ class NN:
             raise ValueError("I have no idea what you're doing with the input size")
 
         for module in self.layout:
-            module.Build(pass_inp)
+            module.Build(pass_inp.shape)
             pass_inp = module.Forward(pass_inp)
-
-            if pass_inp.shape != inp_size: #If there is some kind of reshape, don't reshape the activations at the end
-                end_reshape = False
-
-        if end_reshape: #Reshape back from (N, C, H*W) to (N, C, H, W)
-            self.layout.append(Convert3Dto4D(H, W))
 
 
     def save(self, PATH):

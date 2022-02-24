@@ -16,7 +16,7 @@ class ReLU:
     def Backward(self, inp):
         return (self.training_cache >= 0) * inp
 
-    def Build(self):
+    def Build(self, _):
         pass
 
     def Save(self):
@@ -39,7 +39,7 @@ class tanh:
     def Backward(self, inp):
         return (1 - np.square(np.tanh(self.training_cache))) * inp
 
-    def Build(self):
+    def Build(self, _):
         pass
 
     def Save(self):
@@ -63,7 +63,7 @@ class Sigmoid:
     def Backward(self, inp):
         return (self.training_cache * (1 - self.training_cache)) * inp
 
-    def Build(self):
+    def Build(self, _):
         pass
 
     def Save(self):

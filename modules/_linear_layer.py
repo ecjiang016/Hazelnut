@@ -35,8 +35,8 @@ class Linear:
         self.biases -= self.optimizer.use(np.sum(inp, axis=1) / inp.shape[0])
         return np.matmul(self.weights.T, inp)
 
-    def Build(self, inp):
-        self.inp_size = inp.shape[0]
+    def Build(self, shape):
+        self.inp_size = shape[0]
 
         self.weights, self.biases = self.init_method(self.Neurons, self.inp_size)
 

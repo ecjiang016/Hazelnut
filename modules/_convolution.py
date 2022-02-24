@@ -96,8 +96,8 @@ class Conv:
         padded_filter[:, :, self.PAD_F_SIZE:-self.PAD_F_SIZE, self.PAD_F_SIZE:-self.PAD_F_SIZE] = inp
         return padded_filter
     
-    def Build(self, inp):
-        _, self.C, self.H, self.W = inp.shape
+    def Build(self, shape):
+        _, self.C, self.H, self.W = shape
 
         #Initialize filters
         self.filter = self.init_method(self.F, self.C, self.KS)
