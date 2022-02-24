@@ -103,19 +103,16 @@ class Conv:
         self.filter = self.init_method(self.F, self.C, self.KS)
         self.filter = np.swapaxes(np.swapaxes(self.filter, 0, 3), 1, 2)
 
-        #Calculate output dimensions
-        self.OH = self.H - self.KS + 1
-        self.OW = self.W - self.KS + 1
-
         #Padding calculations
         if self.mode == 'Same':
             self.PAD_SIZE = (self.KS - 1) // 2
             #Zero padding matrix 
             self.H += self.KS - 1
             self.W += self.KS - 1
-            #Fix output dimensions
-            self.OH = self.H
-            self.OW = self.W
+
+        #Calculate output dimensions
+        self.OH = self.H - self.KS + 1
+        self.OW = self.W - self.KS + 1
 
         #Padding calculating for full convolution
         self.PAD_F_SIZE = self.KS - 1

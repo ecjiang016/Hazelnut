@@ -24,8 +24,8 @@ class BatchNorm:
         return (inp - self.test_mean[None, :, None, None]) * (1 / np.sqrt(self.test_variance[None, :, None, None] + self.epsilon)) * self.gamma[None, :, None, None] + self.beta[None, :, None, None]
 
     def Forward_training(self, inp):
-        mean = np.sum(inp, axis=(0, 2)) / self.NHW 
-        variance = np.sum(np.square(inp-mean), axis=(0, 2, 3)) / self.NHW
+        mean = np.sum(inp, axis=(0, 2, 3)) / self.NHW 
+        variance = np.sum(np.square(inp-mean[None, :, None, None]), axis=(0, 2, 3)) / self.NHW
 
         self.cache0 = inp - mean[None, :, None, None]
         self.cache1 = 1 / np.sqrt(variance + self.epsilon)
@@ -37,7 +37,7 @@ class BatchNorm:
         return self.cache2 + self.beta[None, :, None, None]
 
     def Backward(self, grad):
-        variance_grad = np.sum(self.cache0 * (-(self.gamma * np.cube(self.cache1, 3))/2)[None, :, None, None], axis=(0, 2, 3))
+        variance_grad = np.sum(self.cache0 * (-(self.gamma * np.power(self.cache1, 3))/2)[None, :, None, None], axis=(0, 2, 3))
         mean_grad = np.sum((((self.gamma * self.cache1)/2)[None, :, None, None] * -grad), axis=(0, 2)) + ((-2 * variance_grad * np.sum(self.cache0, axis=(0, 2)))/self.NHW)
         
         #Update beta and gamma

@@ -1,6 +1,5 @@
 import pickle
 import numpy as np
-from .modules.Reshape import Convert4Dto3D, Convert3Dto4D
 
 class NN:
     def __init__(self):
@@ -70,7 +69,7 @@ class NN:
 
         if len(inp_size) == 3:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
-            C, H, W = inp_size.shape
+            C, H, W = inp_size
             pass_inp = np.zeros((1, C, H, W))
 
         elif len(inp_size) == 1:
