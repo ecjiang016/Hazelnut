@@ -2,7 +2,7 @@ import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from . import Optimizers
 from ..utils import reshape_to_indices
-from ..utils.layer_init import He_init
+from ..utils.layer_init.conv_init import He_init
 
 class Conv:
     def __init__(self, F, KS, mode='Valid', init_method=He_init):
