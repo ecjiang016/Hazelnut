@@ -48,12 +48,11 @@ class Conv:
             inp = self.pad(inp)
 
         self.training_cache = inp.copy()
-        SN, SC, SH, SW = inp.strides
-        self.acti_strides = (SN, SW, SH, SW, SH, SC)
+        self.SN, self.SC, self.SH, self.SW = inp.strides
         col = as_strided(
             inp,
             (inp.shape[0], self.OW, self.OH, self.KS, self.KS, self.C), 
-            (SN, SW, SH, SW, SH, SC),
+            (self.SN, self.SW, self.SH, self.SW, self.SH, self.SC),
             writeable=False)
 
         return np.swapaxes(np.tensordot(col, self.filter, axes=3), 1, 3)
@@ -74,7 +73,7 @@ class Conv:
         #Calculate filter gradient and update filter
         cache_acti_col = as_strided(
             self.training_cache,
-            (self.C, self.KS, self.KS, self.OW, self.OH, self.N), 
+            (self.C, self.KS, self.KS, self.OW, self.OH, inp.shape[0]), 
             (self.SC, self.SW, self.SH, self.SW, self.SH, self.SN),
             writeable=False)
             
