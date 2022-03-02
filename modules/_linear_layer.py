@@ -41,7 +41,7 @@ class Linear:
         #Make 2 different optimizers for weights and biases
         from copy import deepcopy
         self.optimizer_weights = deepcopy(self.optimizer)
-        self.optimizer_biases = self.optimizer
+        self.optimizer_biases = deepcopy(self.optimizer)
 
         self.weights, self.biases = self.init_method(self.Neurons, self.inp_size)
 

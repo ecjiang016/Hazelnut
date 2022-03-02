@@ -61,9 +61,11 @@ class Conv:
         reshaped_inp = np.swapaxes(np.swapaxes(inp, 0, 3), 1, 2) # (N, F, OH, OW) -> (OW, OH, F, N)
 
         #Calculate the next gradient
-        SW, SH, SC, SF = self.filter.strides
+        padded_filter = np.flip(self.pad_filter(self.filter), axis=(0, 1))
+        SW, SH, SC, SF = padded_filter.strides
+
         filter_col = as_strided(
-            np.flip(self.filter, axis=(0, 1)),
+            padded_filter,
             (self.W, self.C, self.H, self.OW, self.OH, self.F), 
             (SW, SC, SH, SW, SH, SF),
             writeable=False)
@@ -73,15 +75,17 @@ class Conv:
         #Calculate filter gradient and update filter
         cache_acti_col = as_strided(
             self.training_cache,
-            (self.C, self.KS, self.KS, self.OW, self.OH, inp.shape[0]), 
-            (self.SC, self.SW, self.SH, self.SW, self.SH, self.SN),
+            (self.KS, self.KS, self.C, self.OW, self.OH, inp.shape[0]), 
+            (self.SW, self.SH, self.SC, self.SW, self.SH, self.SN),
             writeable=False)
             
-        filter_grad = np.swapaxes(np.swapaxes(np.tensordot(cache_acti_col, np.swapaxes(reshaped_inp, 2, 3), axes=3), 1, 3), 0, 1) # (C, KS[W], KS[H], N) -> (N, C, KS[H], KS[W])
-        self.filter = self.optimizer.use(np.sum(filter_grad, axis=0))
+        #Rehsaped_inp reshape: (OW, OH, F, N) -> (OW, OH, N, F)
+        filter_grad = np.tensordot(cache_acti_col, np.swapaxes(reshaped_inp, 2, 3), axes=3)
+        self.filter = self.optimizer.use(filter_grad)
         
         if self.PAD:
             return pass_gradient[:, :, self.PAD:-self.PAD, self.PAD:-self.PAD]
+
         
         return pass_gradient
          
@@ -90,9 +94,9 @@ class Conv:
         padded_activations[:, :, self.PAD_SIZE:-self.PAD_SIZE, self.PAD_SIZE:-self.PAD_SIZE] = inp
         return padded_activations
 
-    def pad_filter(self, inp):
-        padded_filter = np.zeros((inp.shape[0], self.C, self.PFH, self.PDW))
-        padded_filter[:, :, self.PAD_F_SIZE:-self.PAD_F_SIZE, self.PAD_F_SIZE:-self.PAD_F_SIZE] = inp
+    def pad_filter(self, filter_):
+        padded_filter = np.zeros((self.PFW, self.PFH, self.C, self.F))
+        padded_filter[self.PAD_F_SIZE_W:-self.PAD_F_SIZE_W, self.PAD_F_SIZE_H:-self.PAD_F_SIZE_H, :, :] = filter_
         return padded_filter
     
     def Build(self, shape):
@@ -114,9 +118,10 @@ class Conv:
         self.OW = self.W - self.KS + 1
 
         #Padding calculating for full convolution
-        self.PAD_F_SIZE = self.KS - 1
-        self.PFH = self.H + self.KS + self.KS - 2
-        self.PDW = self.W + self.KS + self.KS - 2
+        self.PAD_F_SIZE_H = self.OH - 1
+        self.PAD_F_SIZE_W = self.OW - 1
+        self.PFH = self.KS + self.PAD_F_SIZE_H + self.PAD_F_SIZE_H
+        self.PFW = self.KS + self.PAD_F_SIZE_W + self.PAD_F_SIZE_W
 
     def Save(self):
         return {'args':(self.F, self.KS, self.mode, self.init_method), 'var':(self.filter, self.optimizer)}

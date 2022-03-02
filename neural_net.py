@@ -41,8 +41,8 @@ class NN:
     def train(self, inp, correct_out):
         out = self.forward_train(inp)
         self.backpropagate(self.loss.Backward(out, correct_out))
-
-        return self.loss.Forward(out, correct_out)
+        loss = self.loss.Forward(out, correct_out)
+        return loss, out
 
     def add(self, module) -> None:
         try:

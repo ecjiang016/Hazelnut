@@ -26,7 +26,7 @@ class SkipConnClass:
             return inp + self.cache
 
     def Backward(self, inp):
-        if self.start:
+        if not self.start:
             self.start = not self.start
             self.cache = inp
             return inp

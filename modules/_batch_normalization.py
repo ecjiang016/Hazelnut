@@ -1,5 +1,4 @@
 import numpy as np
-from torch import DictType
 from . import Optimizers
 
 class BatchNorm:
