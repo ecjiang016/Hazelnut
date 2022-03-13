@@ -1,5 +1,3 @@
-import numpy as np
-
 class Flatten:
     """
     Reshapes from shape (N, C, H, W) to shape (C*H*W, N)

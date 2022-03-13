@@ -1,5 +1,5 @@
+import warnings
 import pickle
-import numpy as np
 from copy import deepcopy
 
 class NN:
@@ -7,6 +7,7 @@ class NN:
         self.layout = []
         self.loss = None
         self.optimizer = None
+        self.mode = None
 
     def __repr__(self) -> str:
         str_ = ""
@@ -42,6 +43,10 @@ class NN:
         out = self.forward_train(inp)
         self.backpropagate(self.loss.Backward(out, correct_out))
         loss = self.loss.Forward(out, correct_out)
+
+        if self.np.isnan(loss):
+            raise RuntimeError("Loss is NaN")
+
         return loss, out
 
     def add(self, module) -> None:
@@ -62,30 +67,65 @@ class NN:
         assert self.loss, "No loss function specified"
         assert self.optimizer, "No optimizer specified"
 
+        #Setting mode for CPU/GPU
+        try:
+            assert self.mode
+
+            if self.mode.lower() == 'cpu':
+                import numpy
+                self.np = numpy
+
+            elif self.mode.lower() == 'gpu':
+                try:
+                    import cupy
+                    self.np = cupy
+                except ModuleNotFoundError:
+                    warnings.warn("Couldn't import CuPy for GPU, using CPU (NumPy) instead")
+                    import numpy
+                    self.np = numpy
+
+            else:
+                raise ValueError("mode needs to be 'cpu' or 'gpu'")
+
+        except (AssertionError, AttributeError):
+            warnings.warn("No mode specified. Defaulting to CPU")
+            import numpy
+            self.np = numpy
+
+        assert self.np, "Couldn't select NumPy or CuPy"
+
         if len(inp_size) == 3:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
             C, H, W = inp_size
-            pass_inp = np.zeros((1, C, H, W))
+            pass_inp = self.np.zeros((1, C, H, W))
 
         elif len(inp_size) == 1:
             #MLP ig
             H = inp_size
-            pass_inp = np.zeros((H, 1))
+            pass_inp = self.np.zeros((H, 1))
 
         else:
             raise ValueError("I have no idea what you're doing with the input size")
 
         for module in self.layout:
             try:
-                module.optimizer
                 module.optimizer = deepcopy(self.optimizer)
+                module.optimizer.np = self.np #Setting the np here to allow deepcopying of the module
+
             except AttributeError: #Module doesn't need an optimizer
+                pass
+
+            try:
+                module.np = self.np
+            except AttributeError: 
                 pass
         
             module.Build(pass_inp.shape)
             pass_inp = module.Forward(pass_inp)
-            if np.isnan(np.min(pass_inp)):
+            if self.np.isnan(self.np.min(pass_inp)):
                 raise SystemError("NaN incountered.")
+
+        self.loss.np = self.np
 
 
     def save(self, PATH):

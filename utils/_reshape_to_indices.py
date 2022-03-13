@@ -21,13 +21,3 @@ def reshape_to_indices(function):
         return indices
 
     return inner
-
-if __name__ == '__main__':
-    @reshape_to_indices
-    def r(arr):
-        return np.flip(arr, 1)
-    
-    indices = r(np.zeros((3, 2, 4, 4)))
-
-    inp = np.random.randint(-5, 6, size=(3, 2, 4, 4))
-    print(np.flip(inp, 1) == inp[indices])

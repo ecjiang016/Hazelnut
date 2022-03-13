@@ -1,4 +1,4 @@
-import numpy as np
+import numpy
 
 class ReLU:
     def __init__(self):
@@ -27,17 +27,18 @@ class ReLU:
 
 class tanh:
     def __init__(self):
-        pass
+        #CPU/GPU (NumPy/CuPy)
+        self.np = numpy
     
     def Forward(self, inp):
-        return np.tanh(inp)
+        return self.np.tanh(inp)
 
     def Forward_training(self, inp):
         self.training_cache = inp.copy()
-        return np.tanh(inp)
+        return self.np.tanh(inp)
 
     def Backward(self, inp):
-        return (1 - np.square(np.tanh(self.training_cache))) * inp
+        return (1 - self.np.square(self.np.tanh(self.training_cache))) * inp
 
     def Build(self, _):
         pass
@@ -50,13 +51,14 @@ class tanh:
 
 class Sigmoid:
     def __init__(self):
-        pass
+        #CPU/GPU (NumPy/CuPy)
+        self.np = numpy
     
     def Forward(self, inp):
-        return 1/(np.exp(-inp)+1)
+        return 1/(self.np.exp(-inp)+1)
 
     def Forward_training(self, inp):
-        out = 1/(np.exp(-inp)+1)
+        out = 1/(self.np.exp(-inp)+1)
         self.training_cache = out.copy()
         return out
 

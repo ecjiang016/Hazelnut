@@ -8,7 +8,7 @@ class SkipConnClass:
     def Forward(self, inp):
         if self.start:
             self.start = not self.start
-            self.cache = inp
+            self.cache = inp.copy()
             return inp
         
         else:
@@ -18,7 +18,7 @@ class SkipConnClass:
     def Forward_training(self, inp):
         if self.start:
             self.start = not self.start
-            self.cache = inp
+            self.cache = inp.copy()
             return inp
         
         else:
@@ -26,9 +26,9 @@ class SkipConnClass:
             return inp + self.cache
 
     def Backward(self, inp):
-        if not self.start:
+        if self.start:
             self.start = not self.start
-            self.cache = inp
+            self.cache = inp.copy()
             return inp
         
         else:
