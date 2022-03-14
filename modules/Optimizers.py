@@ -11,6 +11,28 @@ class SGD:
     def Load(self):
         pass
 
+class SGDM:
+    """
+    Stochastic Gradient Descent + Momentum
+
+    Momentum in the form:
+    learning_rate * gradient - (momentum_weight * (gradient - previous_gradient))
+    """
+    def __init__(self, learning_rate=1e-5, momentum_weight=1e-5) -> None:
+        self.learning_rate = learning_rate
+        self.momentum_weight = momentum_weight
+
+        self.gradient_cache = 0
+
+    def use(self, gradient):
+        return self.learning_rate * gradient - (self.momentum_weight * (gradient - self.gradient_cache))
+
+    def Save(self):
+        return {'args':(), 'var':(self.learning_rate, self.momentum_weight, self.gradient_cache)}
+
+    def Load(self, var):
+        self.learning_rate, self.momentum_weight, self.gradient_cache = var
+
 class Momentum:
     def __init__(self, learning_rate=0.0001, beta=0.9):
         self.learning_rate = learning_rate
@@ -27,6 +49,7 @@ class Momentum:
 
     def Load(self):
         pass
+
 class RProp:
     def __init__(self, step_size=0.001, scale=(0.5, 1.2), clip=(0.000001, 50)):
         """
