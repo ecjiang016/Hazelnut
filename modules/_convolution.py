@@ -82,7 +82,7 @@ class Conv:
             
         #inp reshape: (N, F, OH, OW) -> (OW, OH, N, F)
         filter_grad = self.np.tensordot(cache_acti_col, inp.transpose(3, 2, 0, 1), axes=3)
-        self.filter = self.optimizer.use(filter_grad)
+        self.filter -= self.optimizer.use(filter_grad)
         
         if self.PAD:
             return pass_gradient[:, :, self.PAD:-self.PAD, self.PAD:-self.PAD]
