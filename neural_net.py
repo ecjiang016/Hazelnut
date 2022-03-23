@@ -83,6 +83,7 @@ class NN:
                     warnings.warn("Couldn't import CuPy for GPU, using CPU (NumPy) instead")
                     import numpy
                     self.np = numpy
+                    self.mode = 'cpu'
 
             else:
                 raise ValueError("mode needs to be 'cpu' or 'gpu'")
@@ -91,6 +92,7 @@ class NN:
             warnings.warn("No mode specified. Defaulting to CPU")
             import numpy
             self.np = numpy
+            self.mode = 'cpu'
 
         assert self.np, "Couldn't select NumPy or CuPy"
 
