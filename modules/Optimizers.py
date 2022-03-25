@@ -25,7 +25,9 @@ class SGDM:
         self.gradient_cache = 0
 
     def use(self, gradient):
-        return self.learning_rate * gradient - (self.momentum_weight * (gradient - self.gradient_cache))
+        out = self.learning_rate * gradient - (self.momentum_weight * (gradient - self.gradient_cache))
+        self.gradient_cache = gradient.copy()
+        return out
 
     def Save(self):
         return {'args':(), 'var':(self.learning_rate, self.momentum_weight, self.gradient_cache)}
