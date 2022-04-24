@@ -81,7 +81,7 @@ class Conv:
             )
             
         #inp reshape: (N, F, OH, OW) -> (OW, OH, N, F)
-        filter_grad = self.np.tensordot(cache_acti_col, inp.transpose(3, 2, 0, 1), axes=3)
+        filter_grad = self.np.tensordot(cache_acti_col, inp.transpose(3, 2, 0, 1), axes=3) / inp.shape[0]
         self.filter -= self.optimizer.use(filter_grad)
         
         if self.PAD:
@@ -125,7 +125,7 @@ class Conv:
         self.PFW = self.KS + self.PAD_F_SIZE_W + self.PAD_F_SIZE_W
 
     def Save(self):
-        return {'args':(self.F, self.KS, self.mode, self.init_method), 'var':(self.filter, self.optimizer.__class__, self.optimizer.Save())}
+        return {'args':(self.F, self.KS, self.mode), 'var':(self.filter, self.optimizer.__class__, self.optimizer.Save())}
 
     def Load(self, var):
         self.filter, optimizer_class, optimizer_dict = var

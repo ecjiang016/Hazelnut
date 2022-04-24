@@ -34,8 +34,8 @@ class Linear:
         return self.np.matmul(self.weights, inp) + self.biases[:, None]
 
     def Backward(self, inp):
-        self.weights -= self.optimizer_weights.use(self.np.matmul(inp, self.training_cache.T) / inp.shape[0])
-        self.biases -= self.optimizer_biases.use(self.np.sum(inp, axis=1) / inp.shape[0])
+        self.weights -= self.optimizer_weights.use(self.np.matmul(inp, self.training_cache.T) / inp.shape[1])
+        self.biases -= self.optimizer_biases.use(self.np.sum(inp, axis=1) / inp.shape[1])
         return self.np.matmul(self.weights.T, inp)
 
     def Build(self, shape):
@@ -60,7 +60,7 @@ class Linear:
         self.biases = self.np.array(self.biases) 
 
     def Save(self):
-        return {'args':(self.Neurons, self.init_method), 'var':(self.weights, self.biases, self.optimizer.__class__, self.optimizer.Save())}
+        return {'args':(self.Neurons), 'var':(self.weights, self.biases, self.optimizer.__class__, self.optimizer.Save())}
 
     def Load(self, var):
         self.weights, self.biases, optimizer_class, optimizer_dict = var
