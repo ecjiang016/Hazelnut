@@ -14,7 +14,6 @@ class SGD:
 class SGDM:
     """
     Stochastic Gradient Descent + Momentum
-
     Momentum in the form:
     learning_rate * gradient - (momentum_weight * (gradient - previous_gradient))
     """
@@ -22,13 +21,13 @@ class SGDM:
         self.learning_rate = learning_rate
         self.momentum_weight = momentum_weight
 
-        self.gradient_cache = 0
+        self.update_cache = 0
 
     def use(self, gradient):
-        out = self.learning_rate * gradient - (self.momentum_weight * (gradient - self.gradient_cache))
-        self.gradient_cache = gradient.copy()
+        out = self.learning_rate * gradient + (self.momentum_weight * self.update_cache)
+        self.update_cache = out.copy()
         return out
-
+        
     def Save(self):
         return {'args':(), 'var':(self.learning_rate, self.momentum_weight, self.gradient_cache)}
 
