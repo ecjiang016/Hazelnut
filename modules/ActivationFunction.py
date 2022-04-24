@@ -73,3 +73,30 @@ class Sigmoid:
 
     def Load(self):
         pass
+
+class Softmax:
+    """
+    Doesn't come with a backprop as it's designed to be used with a cross entropy loss which would account for that
+    """
+    def __init__(self) -> None:
+        self.np = numpy
+
+    def Forward(self, inp):
+        exps = self.np.exp(inp - self.np.max(inp, axis=0)[None, :]) #Add numerical stability
+        return exps/self.np.sum(exps, axis=0)[None, :]
+
+    def Forward_training(self, inp):
+        exps = self.np.exp(inp - self.np.max(inp, axis=0)[None, :]) #Add numerical stability
+        return exps/self.np.sum(exps, axis=0)[None, :]
+
+    def Backward(self, inp):
+        return inp
+
+    def Build(self, _):
+        pass
+
+    def Save(self):
+        return {'args':(), 'var':()}
+
+    def Load(self):
+        pass
