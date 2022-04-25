@@ -8,6 +8,7 @@ class NN:
         self.loss = None
         self.optimizer = None
         self.mode = None
+        self.gradient_clip = None
 
     def __repr__(self) -> str:
         str_ = ""
@@ -96,6 +97,7 @@ class NN:
 
         assert self.np, "Couldn't select NumPy or CuPy"
 
+        #Computing dummy tensor for build
         if len(inp_size) == 3:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
             C, H, W = inp_size
@@ -111,6 +113,7 @@ class NN:
 
         for module in self.layout:
             try:
+                module.optimizer
                 module.optimizer = deepcopy(self.optimizer)
                 module.optimizer.np = self.np #Setting the np here to allow deepcopying of the module
 
