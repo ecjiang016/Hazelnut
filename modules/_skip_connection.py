@@ -36,7 +36,7 @@ class SkipConnClass:
             return inp + self.cache
 
     def Build(self, _):
-        self.start = True
+        pass
 
     def Save(self):
         return {'args':(), 'var':()}
