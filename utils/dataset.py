@@ -7,6 +7,8 @@ class dataloader:
     def __init__(self, batch_size:int, epochs:int, inp, labels):
         """
         The first dimension shape of input (inp) must match the first dimension shape of labels
+
+        Returns `(input_batch, label_batch, current_epoch)`
         """
         self.batch_size = batch_size
         self.epochs = epochs
@@ -39,7 +41,7 @@ class dataloader:
 
         self.current_batch_num += 1
 
-        if self.current_epoch == self.epochs:
+        if self.current_epoch == self.epochs-1:
             raise StopIteration
 
         return input_batch, label_batch, self.current_epoch
