@@ -8,7 +8,6 @@ class NN:
         self.loss = None
         self.optimizer = None
         self.mode = None
-        self.gradient_clip = None
 
     def __repr__(self) -> str:
         str_ = ""
@@ -40,13 +39,27 @@ class NN:
         for module in reversed(self.layout):
             grad = module.Backward(grad)
 
+    def update(self):
+        """
+        Updates all the weights with the gradients
+        """
+        for module in self.layout:
+            try:
+                #Grad clip
+                module.Update()
+            except AttributeError: #Doesn't have weights that need to be updated
+                pass
+
     def train(self, inp, correct_out):
         out = self.forward_train(inp)
-        self.backpropagate(self.loss.Backward(out, correct_out))
         loss = self.loss.Forward(out, correct_out)
 
         if self.np.isnan(loss):
             raise RuntimeError("Loss is NaN")
+            
+        self.backpropagate(self.loss.Backward(out, correct_out))
+
+        self.update()
 
         return loss, out
 
@@ -159,5 +172,5 @@ class NN:
             var = save_dict['var']
 
             module = module_class(*args)
-            module.load(var)
+            module.Load(var)
             self.layout.append(module)

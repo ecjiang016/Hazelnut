@@ -81,14 +81,16 @@ class Conv:
             )
             
         #inp reshape: (N, F, OH, OW) -> (OW, OH, N, F)
-        filter_grad = self.np.tensordot(cache_acti_col, inp.transpose(3, 2, 0, 1), axes=3) / inp.shape[0]
-        self.filter -= self.optimizer.use(filter_grad)
+        self.gradient = self.np.tensordot(cache_acti_col, inp.transpose(3, 2, 0, 1), axes=3) / inp.shape[0]
         
         if self.PAD:
             return pass_gradient[:, :, self.PAD:-self.PAD, self.PAD:-self.PAD]
 
         
         return pass_gradient
+
+    def Update(self):
+        self.filter -= self.optimizer.use(self.gradient)
          
     def pad(self, inp):
         padded_activations = self.np.zeros((inp.shape[0], self.C, self.H, self.W))
