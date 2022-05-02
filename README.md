@@ -135,5 +135,5 @@ loss, out = net.train(inp_batch, labels_batch)
 
 ## Example
 Check out 
-https://github.com/ecjiang016/MNIST-Hazelnut/settings
+https://github.com/ecjiang016/MNIST-Hazelnut
 for an example on using Hazelnut
