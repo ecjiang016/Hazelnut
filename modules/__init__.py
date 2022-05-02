@@ -1,6 +1,7 @@
 from . import ActivationFunction
 from . import Optimizers
 from . import LossFunction
+from . import Pooling
 from .Reshape import Flatten
 from ._convolution import Conv
 from ._batch_normalization import BatchNorm
