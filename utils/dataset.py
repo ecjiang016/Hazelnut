@@ -41,7 +41,7 @@ class dataloader:
 
         self.current_batch_num += 1
 
-        if self.current_epoch == self.epochs-1:
+        if self.current_epoch == self.epochs+1:
             raise StopIteration
 
         return input_batch, label_batch, self.current_epoch
