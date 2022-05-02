@@ -97,6 +97,8 @@ class NN:
 
         assert self.np, "Couldn't select NumPy or CuPy"
 
+        assert type(inp_size) is tuple, "Please pass a tuple for inp_size"
+
         #Computing dummy tensor for build
         if len(inp_size) == 3:
             #If CNN, the inputs need to be reshaped to (1, C, H*W) as that's how the modules takes care of them
@@ -105,7 +107,7 @@ class NN:
 
         elif len(inp_size) == 1:
             #MLP ig
-            H = inp_size
+            H, = inp_size
             pass_inp = self.np.zeros((H, 1))
 
         else:
