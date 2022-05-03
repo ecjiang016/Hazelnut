@@ -127,9 +127,7 @@ class Conv:
         self.PFW = self.KS + self.PAD_F_SIZE_W + self.PAD_F_SIZE_W
 
     def Save(self):
-        return {'args':(self.F, self.KS, self.mode), 'var':(self.filter, self.optimizer.__class__, self.optimizer.Save())}
+        return {'args':(self.F, self.KS, self.mode), 'var':(self.filter,)}
 
     def Load(self, var):
-        self.filter, optimizer_class, optimizer_dict = var
-        self.optimizer = optimizer_class()
-        self.optimizer.load(optimizer_dict)
+        self.filter, = var
