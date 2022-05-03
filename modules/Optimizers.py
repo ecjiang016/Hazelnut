@@ -29,10 +29,10 @@ class SGDM:
         return out
         
     def Save(self):
-        return {'args':(), 'var':(self.learning_rate, self.momentum_weight, self.gradient_cache)}
+        return {'args':(), 'var':(self.learning_rate, self.momentum_weight)}
 
     def Load(self, var):
-        self.learning_rate, self.momentum_weight, self.gradient_cache = var
+        self.learning_rate, self.momentum_weight = var
 
 class Momentum:
     def __init__(self, learning_rate=0.0001, beta=0.9):
@@ -75,10 +75,10 @@ class RProp:
         return self.steps * new_signs
 
     def Save(self):
-        return {'args':(), 'var':(self.steps, self.scale_large, self.scale_large, self.clip_min, self.clip_max, self.signs)}
+        return {'args':(), 'var':(self.scale_large, self.scale_large, self.clip_min, self.clip_max)}
 
     def Load(self, var):
-        self.steps, self.scale_large, self.scale_large, self.clip_min, self.clip_max, self.signs = var
+        self.scale_large, self.scale_large, self.clip_min, self.clip_max = var
 
 class RMSProp:
     """Root mean squared propagation"""
@@ -108,10 +108,10 @@ class RMSProp:
         return gradient * self.learning_rate / self.np.sqrt(self.grad_average + self.epsilon)
 
     def Save(self):
-        return {'args':(), 'var':(self.learning_rate, self.beta, self.epsilon, self.grad_average)}
+        return {'args':(), 'var':(self.learning_rate, self.beta, self.epsilon)}
 
     def Load(self, var):
-        self.learning_rate, self.beta, self.epsilon, self.grad_average = var
+        self.learning_rate, self.beta, self.epsilon = var
 
 class Adam:
     """Adaptive Moment Optimization"""
@@ -145,7 +145,7 @@ class Adam:
         return gradient * self.grad_average * self.learning_rate / self.np.sqrt(self.square_grad_average + self.epsilon)
 
     def Save(self):
-        return {'args':(), 'var':(self.learning_rate, self.beta1, self.beta2, self.epsilon, self.grad_average, self.square_grad_average)}
+        return {'args':(), 'var':(self.learning_rate, self.beta1, self.beta2, self.epsilon)}
 
     def Load(self, var):
-        self.learning_rate, self.beta1, self.beta2, self.epsilon, self.grad_average, self.square_grad_average = var
+        self.learning_rate, self.beta1, self.beta2, self.epsilon = var

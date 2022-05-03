@@ -66,9 +66,7 @@ class Linear:
         self.biases = self.np.array(self.biases) 
 
     def Save(self):
-        return {'args':(self.Neurons,), 'var':(self.weights, self.biases, self.optimizer.__class__, self.optimizer.Save())}
+        return {'args':(self.Neurons,), 'var':(self.weights, self.biases)}
 
     def Load(self, var):
-        self.weights, self.biases, optimizer_class, optimizer_dict = var
-        self.optimizer = optimizer_class()
-        self.optimizer.load(optimizer_dict)
+        self.weights, self.biases = var
