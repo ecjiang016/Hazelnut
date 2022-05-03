@@ -149,3 +149,32 @@ class Adam:
 
     def Load(self, var):
         self.learning_rate, self.beta1, self.beta2, self.epsilon, self.grad_average, self.square_grad_average = var
+
+class Demon:
+    """Decaying Momentum"""
+    def __init__(self, epochs, learning_rate=1e-6, beta=0.9) -> None:
+        """
+        Args:
+        - epochs: Number of epochs
+        - learning_rate: Learning rate
+        - beta: The weight of the accumulated gradients over the new one
+        """
+
+        self.learning_rate = learning_rate
+        self.beta = beta
+        self.epochs = epochs
+
+        #Initial values
+        self.t = 0
+        self.grad_average = 0
+
+        #CPU/GPU (NumPy/CuPy)
+        #self.np is set by the main neural_net program to allow deepcopying of this class
+        self.np = None
+
+    def use(self, gradient):
+        decay_time = 1 - (self.t/self.epochs)
+        beta_t = self.beta * (decay_time / ((1-self.beta) + (self.beta * decay_time)))
+        self.grad_average = (self.learning_rate * gradient) - (self.beta_t * self.grad_average)
+        self.t += 1
+        return self.grad_average
