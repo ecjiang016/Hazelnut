@@ -30,7 +30,7 @@ class Linear:
         return self.np.matmul(self.weights, inp) + self.biases[:, None]
 
     def Forward_training(self, inp):
-        self.training_cache = inp
+        self.training_cache = inp.copy()
         return self.np.matmul(self.weights, inp) + self.biases[:, None]
 
     def Backward(self, inp):
@@ -41,6 +41,7 @@ class Linear:
 
     def Update(self):
         weight_grad, bias_grad = self.gradient
+        #raise Exception
         self.weights -= self.optimizer_weights.use(weight_grad)
         self.biases -= self.optimizer_biases.use(bias_grad)
 
